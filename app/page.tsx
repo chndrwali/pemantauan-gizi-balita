@@ -1,5 +1,8 @@
-import { Button } from '@/components/ui/button';
+import { caller } from '@/trpc/server';
 
-export default function Home() {
-  return <Button>Test</Button>;
-}
+const Page = async () => {
+  const users = await caller.getUsers();
+  return <div>{JSON.stringify(users)}</div>;
+};
+
+export default Page;
