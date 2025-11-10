@@ -2,9 +2,7 @@
 
 import { z } from 'zod';
 import Link from 'next/link';
-import Image from 'next/image';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { registerSchema } from '@/lib/form-schema';

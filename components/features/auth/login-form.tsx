@@ -4,14 +4,13 @@ import { z } from 'zod';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { loginSchema } from '@/lib/form-schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormLabel, FormItem, FormMessage } from '@/components/ui/form';
 import { authClient } from '@/lib/auth-client';
 
@@ -51,19 +50,18 @@ export function LoginForm() {
   return (
     <div className="flex flex-col gap-6">
       <Card>
-        <CardHeader className="text-center">
-          <CardTitle>Selamat datang kembali</CardTitle>
-          <CardDescription>Masuk untuk melanjutkan</CardDescription>
+        <CardHeader className="text-center flex items-center gap-2 flex-col">
+          <CardTitle>
+            <Link href="/" className="flex items-center">
+              <Image src="/logo/logo.png" alt="Puskesmas" width={50} height={50} />
+              Puskesmas Sukawarna
+            </Link>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)}>
               <div className="grid gap-6 ">
-                <div className="flex flex-col gap-4">
-                  <Button variant="outline" className="w-full" type="button" disabled={isPending}>
-                    Lanjutkan dengan Google
-                  </Button>
-                </div>
                 <div className="grid gap-6">
                   <FormField
                     control={form.control}
