@@ -1,14 +1,15 @@
-'use client';
+import { LogoutButton } from '@/components/features/auth/logout-button';
+import { requireAuth } from '@/lib/auth-utils';
 
-import { Button } from '@/components/ui/button';
-import { authClient } from '@/lib/auth-client';
-
-const Page = () => {
-  const { data } = authClient.useSession();
+const Page = async () => {
+  await requireAuth();
+  // const { data } = authClient.useSession();
   return (
     <div className="min-w-screen min-h-screen flex items-center justify-center">
-      {JSON.stringify(data)}
-      {data && <Button onClick={() => authClient.signOut()}>Logout</Button>}
+      {/* {JSON.stringify(data)}
+      {data && 
+      } */}
+      <LogoutButton />
     </div>
   );
 };

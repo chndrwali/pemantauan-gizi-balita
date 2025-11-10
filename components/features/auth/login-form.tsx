@@ -9,11 +9,11 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { loginSchema } from '@/lib/form-schema';
 import { zodResolver } from '@hookform/resolvers/zod';
-// import {authClient} from '@/lib/auth-client'
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormLabel, FormItem, FormMessage } from '@/components/ui/form';
+import { authClient } from '@/lib/auth-client';
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
@@ -29,7 +29,21 @@ export function LoginForm() {
   });
 
   const onSubmit = async (values: LoginFormValues) => {
-    console.log(values);
+    await authClient.signIn.email(
+      {
+        email: values.email,
+        password: values.password,
+        callbackURL: '/',
+      },
+      {
+        onSuccess: () => {
+          router.push('/');
+        },
+        onError: (ctx) => {
+          toast.error(ctx.error.message);
+        },
+      }
+    );
   };
 
   const isPending = form.formState.isSubmitting;
