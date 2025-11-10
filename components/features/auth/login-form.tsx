@@ -12,8 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormLabel, FormItem, FormMessage } from '@/components/ui/form';
-import { authClient } from '@/lib/auth-client';
-
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {

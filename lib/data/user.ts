@@ -1,7 +1,6 @@
 import prisma from '@/lib/db';
-import { User } from '@/lib/generated/prisma/client';
 
-export const getUserByEmail = async (email: string): Promise<User | null> => {
+export const getUserByEmail = async (email: string) => {
   try {
     return await prisma.user.findUnique({
       where: { email },
@@ -11,7 +10,7 @@ export const getUserByEmail = async (email: string): Promise<User | null> => {
   }
 };
 
-export const getUserById = async (id: string): Promise<User | null> => {
+export const getUserById = async (id: string) => {
   try {
     return await prisma.user.findUnique({
       where: { id },

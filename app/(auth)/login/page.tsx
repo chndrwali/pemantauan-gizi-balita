@@ -1,4 +1,9 @@
 import { LoginForm } from '@/components/features/auth/login-form';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Login',
+};
 
 const Page = async () => {
   return (
