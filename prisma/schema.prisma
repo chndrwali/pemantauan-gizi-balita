@@ -14,62 +14,343 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  PUSKESMAS
+  KADER
+  PETUGAS
+  ORANGTUA
+}
+
+enum Sex {
+  L   // Laki-laki
+  P   // Perempuan
+}
+
+enum Source {
+  ORANGTUA
+  KADER
+  PETUGAS
+  PUSKESMAS
+}
+
+enum NutritionStatus {
+  GIZI_BAIK
+  GIZI_KURANG
+  GIZI_BURUK
+  GIZI_LEBIH
+  RISIKO_GEMUK
+  OBESE
+  NORMAL_TB_U         // normal tinggi badan menurut umur
+  STUNTED
+  SEVERELY_STUNTED
+}
+
+
 model User {
-  id        String    @id
-  name      String
-  email     String
-  emailVerified Boolean @default(false)
-  image     String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @default(now()) @updatedAt
-  sessions  Session[]
-  accounts  Account[]      
+  id            String    @id @default(uuid())
+  nik           String?   @unique
+  name          String
+  email         String    @unique
+  username      String?   @unique
+  password      String?
+  emailVerified DateTime?
+  phone         String?
+  address       String?
+  rt            String?
+  rw            String?
+  kelurahan     String?
+  kecamatan     String?
 
-  @@unique([email])
+  // khusus petugas / kader
+  kodeWilayah   String?
+  nomorSIP      String?
+
+  image         String?
+  role          Role      @default(ORANGTUA)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt      @map("updated_at")
+
+  // relasi auth
+  sessions       Session[]
+  accounts       Account[]
+  authenticators Authenticator[]
+
+  // relasi domain
+  balita        Balita[]           @relation("OrangTuaBalita")
+  pencatat      Timbang[]          @relation("PencatatTimbang")
+
+  // M2M ke Posyandu via join table
+  posyanduKader   PosyanduKader[]
+  posyanduPetugas PosyanduPetugas[]
+  balitaGuardians BalitaGuardian[]
+
   @@map("user")
+  notifications Notification[]
+  deviceTokens DeviceToken[]
 }
 
-model Session {
-  id        String   @id
-  expiresAt DateTime
-  token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  ipAddress String?
-  userAgent String?
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([token])
-  @@map("session")
-}
-
+// ---------- ACCOUNT ----------
 model Account {
-  id                    String    @id
-  accountId             String
-  providerId            String
-  userId                String
-  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  scope                 String?
-  password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  id                 String   @id @default(cuid())
+  userId             String
+  type               String?     // jadikan required setelah backfill
+  provider           String?     // jadikan required setelah backfill
+  providerAccountId  String?     // jadikan required setelah backfill
+  refresh_token      String?
+  access_token       String?
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 
   @@map("account")
 }
 
-model Verification {
-  id         String   @id
-  identifier String
-  value      String
-  expiresAt  DateTime
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
+// ---------- SESSION ----------
+model Session {
+  sessionToken String   @id
+  userId       String
+  expires      DateTime
 
-  @@map("verification")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+// ---------- AUTHENTICATOR ----------
+model Authenticator {
+  credentialID         String
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, credentialID])
+  @@unique([credentialID])
+  @@index([userId])
+  @@map("authenticator")
+}
+
+// ---------- POSYANDU ----------
+model Posyandu {
+  id        String   @id @default(uuid())
+  nama      String
+  kode      String   @unique
+  alamat    String?
+
+  // relasi
+  balita    Balita[]
+  events    Event[]
+
+  // M2M ke User via join table
+  kader     PosyanduKader[]
+  petugas   PosyanduPetugas[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("posyandu")
+  monthlyStats MonthlyStats[]
+}
+
+// Join table KADER–POSYANDU
+model PosyanduKader {
+  posyanduId String
+  userId     String
+
+  posyandu Posyandu @relation(fields: [posyanduId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([posyanduId, userId])
+  @@index([userId])
+  @@map("posyandu_kader")
+}
+
+// Join table PETUGAS–POSYANDU
+model PosyanduPetugas {
+  posyanduId String
+  userId     String
+
+  posyandu Posyandu @relation(fields: [posyanduId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([posyanduId, userId])
+  @@index([userId])
+  @@map("posyandu_petugas")
+}
+
+// ---------- BALITA ----------
+model Balita {
+  id            String   @id @default(uuid())
+  orangTuaId    String
+  orangTua      User     @relation("OrangTuaBalita", fields: [orangTuaId], references: [id], onDelete: Cascade)
+
+  // link ke Posyandu (FK, biar konsisten dg Posyandu.balita)
+  posyanduId    String?
+  posyandu      Posyandu? @relation(fields: [posyanduId], references: [id])
+
+  nama          String
+  nikAnak       String?  @unique
+  noKIA         String?  @unique
+  tanggalLahir  DateTime
+  jenisKelamin  Sex
+  anakKe        Int?
+  bbLahirKg     Decimal?  @db.Decimal(4, 1)
+  tbLahirCm     Decimal?  @db.Decimal(5, 1)
+  alamat        String?
+  kelurahan     String?
+  kecamatan     String?
+  kodeWilayah   String?
+  aktif         Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pengukuran    Timbang[]
+  balitaKunjungans BalitaKunjungan[]
+  balitaGuardians BalitaGuardian[]
+
+  @@index([orangTuaId])
+  @@index([posyanduId])
+  @@index([kodeWilayah])
+  @@map("balita")
+}
+
+// ---------- TIMBANG ----------
+model Timbang {
+  id            String   @id @default(uuid())
+  balitaId      String
+  balita        Balita   @relation(fields: [balitaId], references: [id], onDelete: Cascade)
+
+  tanggal       DateTime
+  beratKg       Decimal  @db.Decimal(5, 2)
+  tinggiCm      Decimal  @db.Decimal(5, 2)
+  lilaCm        Decimal? @db.Decimal(5, 2)
+  lkCm          Decimal? @db.Decimal(5, 2)
+
+  // sumber & pencatat
+  source        Source   @default(PUSKESMAS)
+  pencatatId    String?
+  pencatat      User?    @relation("PencatatTimbang", fields: [pencatatId], references: [id])
+
+  // cache status WHO (opsional)
+  zWFA          Decimal? @db.Decimal(5, 2)
+  zHFA          Decimal? @db.Decimal(5, 2)
+  zWFH          Decimal? @db.Decimal(5, 2)
+  statusBBU     NutritionStatus?
+  statusTBU     NutritionStatus?
+  statusBBTB    NutritionStatus?
+
+  catatan       String?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([balitaId, tanggal])
+  @@index([pencatatId])
+  @@index([balitaId])
+  @@map("timbang")
+}
+
+// ---------- EVENT & HADIR ----------
+model Event {
+  id         String   @id @default(uuid())
+  posyanduId String
+  posyandu   Posyandu @relation(fields: [posyanduId], references: [id], onDelete: Cascade)
+  tanggal    DateTime
+  jenis      String   // "Penimbangan", "Imunisasi", dll
+  catatan    String?
+  hadir      BalitaKunjungan[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([posyanduId, tanggal])
+  @@map("event")
+}
+
+model BalitaKunjungan {
+  id        String  @id @default(uuid())
+  eventId   String
+  balitaId  String
+  hadir     Boolean @default(true)
+
+  event     Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  balita    Balita @relation(fields: [balitaId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, balitaId])
+  @@index([balitaId])
+  @@map("balita_kunjungan")
+}
+
+// ---------- RELASI ORTU LAIN ----------
+model BalitaGuardian {
+  balitaId String
+  userId   String
+  relation String? // IBU/AYAH/WALI
+
+  balita Balita @relation(fields: [balitaId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([balitaId, userId])
+  @@index([userId])
+  @@map("balita_guardian")
+}
+
+// ---------- NOTIFIKASI ----------
+model Notification {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        String   // "REMINDER_TIMBANG", "HASIL_ANOMALI", dll
+  title       String
+  body        String
+  scheduledAt DateTime?
+  sentAt      DateTime?
+  status      String   @default("PENDING") // PENDING/SENT/FAILED
+  createdAt   DateTime @default(now())
+
+  @@index([userId, status, scheduledAt])
+  @@map("notification")
+}
+
+model DeviceToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  platform  String?  // "web", "android", "ios"
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("device_token")
+}
+
+// ---------- CACHE LAPORAN ----------
+model MonthlyStats {
+  id          String    @id @default(uuid())
+  bulan       DateTime  // tanggal pertama bulan
+  posyanduId  String?
+  posyandu    Posyandu? @relation(fields: [posyanduId], references: [id])
+  totalBalita Int
+  stunted     Int
+  underweight Int
+  wasting     Int
+  obese       Int
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([bulan, posyanduId])
+  @@index([bulan])
+  @@map("monthly_stats")
 }
