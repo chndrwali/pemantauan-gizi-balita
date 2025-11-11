@@ -1,4 +1,4 @@
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { DashboardNavbar } from './dashboard-navbar';
 import { DashboardSidebar } from './dashboard-sidebar';
 
@@ -9,14 +9,13 @@ interface DashboardLayoutProps {
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
     <SidebarProvider>
-      {/* Sidebar tetap di luar */}
-      <DashboardSidebar />
-
-      {/* Semua konten, termasuk Navbar, dibungkus SidebarInset */}
-      <SidebarInset>
+      <div className="w-full">
         <DashboardNavbar />
-        <main className="min-h-screen pt-16 overflow-y-auto">{children}</main>
-      </SidebarInset>
+        <div className="flex min-h-screen pt-6">
+          <DashboardSidebar />
+          <main className="flex-1 overflow-y-auto">{children}</main>
+        </div>
+      </div>
     </SidebarProvider>
   );
 };

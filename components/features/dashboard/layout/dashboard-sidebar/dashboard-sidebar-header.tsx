@@ -9,7 +9,7 @@ export const DashboardSidebarHeader = () => {
 
   const company = {
     name: 'Puskesmas Sukawarna',
-    plan: mappedRole,
+    plan: mappedRole ?? '',
   };
 
   return (
