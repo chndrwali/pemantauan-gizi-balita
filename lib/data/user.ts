@@ -19,3 +19,13 @@ export const getUserById = async (id: string) => {
     return null;
   }
 };
+
+export const getUserByNIK = async (nik: string) => {
+  try {
+    return await prisma.user.findUnique({
+      where: { nik },
+    });
+  } catch {
+    return null;
+  }
+};

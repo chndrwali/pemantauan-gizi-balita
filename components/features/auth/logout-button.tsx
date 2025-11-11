@@ -1,8 +1,8 @@
 'use client';
 
+import { logout } from '@/actions/logout';
 import { Button } from '@/components/ui/button';
-// import { authClient } from '@/lib/auth-client';
 
 export const LogoutButton = () => {
-  return <Button onClick={() => {}}>Logout</Button>;
+  return <Button onClick={() => logout()}>Logout</Button>;
 };

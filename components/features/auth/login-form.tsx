@@ -5,17 +5,23 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
-import { useRouter } from 'next/navigation';
+// import { useRouter } from 'next/navigation';
 import { loginSchema } from '@/lib/form-schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormLabel, FormItem, FormMessage } from '@/components/ui/form';
+import { useState, useTransition } from 'react';
+import { login } from '@/actions/login';
+import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export function LoginForm() {
-  const router = useRouter();
+  // const router = useRouter();
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -26,24 +32,20 @@ export function LoginForm() {
   });
 
   const onSubmit = async (values: LoginFormValues) => {
-    await authClient.signIn.email(
-      {
-        email: values.email,
-        password: values.password,
-        callbackURL: '/',
-      },
-      {
-        onSuccess: () => {
-          router.push('/');
-        },
-        onError: (ctx) => {
-          toast.error(ctx.error.message);
-        },
-      }
-    );
+    startTransition(() => {
+      login(values).then((data) => {
+        if (data.error) {
+          toast.error('Login gagal');
+        } else if (data.success) {
+          toast.success(`${data.success}`);
+          form.reset({
+            email: '',
+            password: '',
+          });
+        }
+      });
+    });
   };
-
-  const isPending = form.formState.isSubmitting;
 
   return (
     <div className="flex flex-col gap-6">
@@ -66,9 +68,19 @@ export function LoginForm() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>
+                          <div className="flex items-center gap-x-2 ">Email Aktif</div>
+                        </FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="example@gmail.com" {...field} />
+                          <Input
+                            {...field}
+                            placeholder="thom@example.com"
+                            type="email"
+                            onKeyDown={(e) => {
+                              if (e.key === ' ') e.preventDefault();
+                            }}
+                            disabled={isPending}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -81,14 +93,42 @@ export function LoginForm() {
                       <FormItem>
                         <FormLabel>Password</FormLabel>
                         <FormControl>
-                          <Input type="password" {...field} />
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              autoComplete="new-password"
+                              placeholder="Min. 8 karakter"
+                              type={passwordVisible ? 'text' : 'password'}
+                              disabled={isPending}
+                              value={field.value ?? ''}
+                              onChange={(e) => {
+                                const v = e.target.value.replace(/^\s+|\s+$/g, '');
+                                field.onChange(v);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === ' ' && (e.currentTarget.selectionStart ?? 0) === 0) {
+                                  e.preventDefault();
+                                }
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPasswordVisible((v) => !v)}
+                              className="absolute inset-y-0 right-0 flex items-center px-3 focus:outline-none"
+                              aria-label={passwordVisible ? 'Sembunyikan password' : 'Tampilkan password'}
+                              aria-pressed={passwordVisible}
+                            >
+                              {passwordVisible ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                            </button>
+                          </div>
                         </FormControl>
+                        {/* <p className="text-xs text-muted-foreground mt-1">Minimal 8 karakter & mengandung huruf besar, huruf kecil, angka, dan simbol.</p> */}
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                   <Button type="submit" disabled={isPending} className="w-full">
-                    Masuk
+                    {isPending ? <Spinner /> : 'Masuk'}
                   </Button>
                 </div>
                 <div className="text-center text-sm">

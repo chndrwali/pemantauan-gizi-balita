@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 // import Link from 'next/link';
-// import { toast } from 'sonner';
+import { toast } from 'sonner';
 import { useForm, useWatch } from 'react-hook-form';
 // import { useRouter } from 'next/navigation';
 import { registerSchema } from '@/lib/form-schema';
@@ -13,10 +13,13 @@ import { Form, FormControl, FormField, FormLabel, FormItem, FormMessage } from '
 import { Spinner } from '@/components/ui/spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Role } from '@/lib/generated/prisma/enums';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import bandung from '@/lib/data/bandung-kecamatan-kelurahan.json';
+import { register } from '@/actions/register';
+import { FormSuccess } from './form-success';
+import { FormError } from './form-error';
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 const labelize = (val: string) => {
@@ -37,6 +40,9 @@ export function RegisterForm() {
   // const router = useRouter();
 
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [isPending, startTransition] = useTransition();
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -59,10 +65,22 @@ export function RegisterForm() {
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
-    console.log(values);
+    setError('');
+    setSuccess('');
+    startTransition(() => {
+      register(values).then((data) => {
+        if (data.error) {
+          setError(data.error);
+          toast.error('Gagal Mendaftarkan Akun');
+        } else if (data.success) {
+          setSuccess(data.success);
+          toast.success(`${data.success}`);
+          form.reset();
+        }
+      });
+    });
   };
 
-  const isPending = form.formState.isSubmitting;
   const role = useWatch({
     control: form.control,
     name: 'role',
@@ -85,9 +103,13 @@ export function RegisterForm() {
             <h1 className="text-2xl font-bold">Tambah Akun</h1>
             <p className="text-xs text-muted-foreground">Penambahan akun hanya dapat dilakukan melalui dashboard admin.</p>
           </div>
-          <Button disabled={isPending} variant="secondary" type="submit">
-            {isPending ? <Spinner /> : 'Buat Akun'}
-          </Button>
+          <div className="flex flex-col gap-y-2">
+            <Button disabled={isPending} variant="secondary" type="submit">
+              {isPending ? <Spinner /> : 'Buat Akun'}
+            </Button>
+            <FormSuccess message={success} />
+            <FormError message={error} />
+          </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 ">
           <div className="space-y-4 lg:col-span-3 ">

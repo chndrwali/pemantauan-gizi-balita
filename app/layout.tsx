@@ -3,6 +3,8 @@ import './globals.css';
 import { TRPCReactProvider } from '@/trpc/client';
 import { Toaster } from '@/components/ui/sonner';
 import { Inter } from 'next/font/google';
+import { SessionProvider } from 'next-auth/react';
+import { auth } from '@/lib/auth';
 
 const inter = Inter({ subsets: ['latin'], weight: ['400', '700'] });
 
@@ -15,18 +17,20 @@ export const metadata: Metadata = {
     'Sistem Pemantauan Gizi Balita di Puskesmas Sukawarna. Memudahkan orang tua memantau perkembangan status gizi balita secara berkala, mulai dari pencatatan berat badan, tinggi badan, hingga grafik pertumbuhan sesuai standar Kemenkes.',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased`}>
-        <TRPCReactProvider>
-          {children}
+        <SessionProvider session={session}>
+          <TRPCReactProvider>{children}</TRPCReactProvider>
           <Toaster />
-        </TRPCReactProvider>
+        </SessionProvider>
       </body>
     </html>
   );
