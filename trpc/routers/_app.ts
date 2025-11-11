@@ -1,9 +1,8 @@
-import prisma from '@/lib/db';
-import { baseProcedure, createTRPCRouter } from '../init';
+import { createTRPCRouter } from '../init';
+import { usersAdminRouter } from '@/lib/server/puskesmas/users-procedures';
+
 export const appRouter = createTRPCRouter({
-  getUsers: baseProcedure.query(() => {
-    return prisma.user.findMany();
-  }),
+  usersAdmin: usersAdminRouter,
 });
 // export type definition of API
 export type AppRouter = typeof appRouter;

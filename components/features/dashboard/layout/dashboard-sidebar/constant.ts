@@ -10,6 +10,11 @@ export const adminSideBarLink: NavItem[] = [
     items: [], // Empty array as there are no child items for Dashboard
   },
   {
+    title: 'Pengguna',
+    url: '/dashboard/users',
+    icon: 'userPen',
+  },
+  {
     title: 'Table',
     url: '#',
     icon: 'table',

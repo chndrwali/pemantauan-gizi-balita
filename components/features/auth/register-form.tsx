@@ -137,37 +137,7 @@ export function RegisterForm() {
                 </FormItem>
               )}
             />
-            {isStaff && (
-              <>
-                <FormField
-                  control={form.control}
-                  name="kodeWilayah"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Kode Wilayah</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Contoh: 3578.01.02" onChange={(e) => field.onChange(e.target.value.trimStart())} disabled={isPending} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
-                <FormField
-                  control={form.control}
-                  name="nomorSIP"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nomor SIP</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="Contoh: SIP-123/PKM/2025" onChange={(e) => field.onChange(e.target.value.trimStart())} disabled={isPending} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </>
-            )}
             <FormField
               control={form.control}
               name="nik"
@@ -367,6 +337,37 @@ export function RegisterForm() {
           </div>
           {/* kolom ke 2 */}
           <div className="flex flex-col space-y-4 lg:col-span-2">
+            {isStaff && (
+              <>
+                <FormField
+                  control={form.control}
+                  name="kodeWilayah"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Kode Wilayah</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Contoh: 3578.01.02" onChange={(e) => field.onChange(e.target.value.trimStart())} disabled={isPending} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="nomorSIP"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nomor SIP</FormLabel>
+                      <FormControl>
+                        <Input {...field} placeholder="Contoh: SIP-123/PKM/2025" onChange={(e) => field.onChange(e.target.value.trimStart())} disabled={isPending} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </>
+            )}
             <FormField
               control={form.control}
               name="username"
