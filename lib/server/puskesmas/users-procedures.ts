@@ -1,9 +1,35 @@
 import prisma from '@/lib/db';
 import { Prisma } from '@/lib/generated/prisma/client';
 import { baseProcedure, createTRPCRouter } from '@/trpc/init';
+import { TRPCError } from '@trpc/server';
 import z from 'zod';
 
 export const usersAdminRouter = createTRPCRouter({
+  getByID: baseProcedure.input(z.object({ id: z.string().uuid() })).query(async ({ input }) => {
+    const { id } = input;
+
+    const user = await prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        nik: true,
+        name: true,
+        email: true,
+        username: true,
+        phone: true,
+        address: true,
+        rt: true,
+        rw: true,
+        kelurahan: true,
+        kecamatan: true,
+        kodeWilayah: true,
+        nomorSIP: true,
+        role: true,
+      },
+    });
+
+    return { success: true, user };
+  }),
   bulkDelete: baseProcedure
     .input(
       z.object({
@@ -102,5 +128,61 @@ export const usersAdminRouter = createTRPCRouter({
         total,
         pageCount: Math.ceil(total / limit),
       };
+    }),
+  updateUser: baseProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        nik: z.string().min(16, 'NIK harus terdiri dari 16 digit angka').optional(),
+        name: z.string().min(1, 'Nama harus diisi').optional(),
+        username: z.string().optional(),
+        phone: z.string().min(11, 'Nomor Handphone minimal 11 digit angka').optional(),
+        address: z.string().min(1, 'Alamat dibutuhkan').optional(),
+        rt: z.string().min(1).optional(),
+        rw: z.string().min(1).optional(),
+        kelurahan: z.string().min(1).optional(),
+        kecamatan: z.string().min(1).optional(),
+        kodeWilayah: z.string().optional(),
+        nomorSIP: z.string().optional(),
+        email: z.email('Mohon masukan email yang valid').optional(),
+        role: z.enum(['KADER', 'PETUGAS', 'ORANGTUA']).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { id, ...payload } = input;
+
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const data: Record<string, any> = {};
+        for (const [k, v] of Object.entries(payload)) {
+          if (typeof v !== 'undefined') data[k] = v === null ? null : v;
+        }
+
+        const updated = await prisma.user.update({
+          where: { id },
+          data,
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            username: true,
+            phone: true,
+            address: true,
+            rt: true,
+            rw: true,
+            kelurahan: true,
+            kecamatan: true,
+            kodeWilayah: true,
+            nomorSIP: true,
+            role: true,
+            updatedAt: true,
+          },
+        });
+
+        return { success: true, user: updated };
+      } catch (error) {
+        console.error('users.update error', error);
+        throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Gagal memperbarui pengguna' });
+      }
     }),
 });

@@ -22,3 +22,13 @@ export const getInitials = (name: string): string =>
 
 export const DEFAULT_LIMIT = 10;
 export const AVATAR_FALLBACK = '/logo/logo.png';
+
+export const normalizePhone = (phone?: string) => {
+  if (!phone) return null;
+  // contoh sederhana: jika mulai 0 -> ganti +62
+  const raw = phone.replace(/\D/g, '');
+  if (raw.startsWith('0')) return '+62' + raw.slice(1);
+  if (raw.startsWith('62')) return '+' + raw;
+  if (raw.startsWith('+')) return raw;
+  return '+' + raw;
+};

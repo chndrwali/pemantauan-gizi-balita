@@ -6,7 +6,7 @@ interface DashboardLayoutProps {
   children: React.ReactNode;
 }
 
-export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   return (
     <SidebarProvider>
       <div className="w-full">
@@ -19,3 +19,5 @@ export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     </SidebarProvider>
   );
 };
+
+export default DashboardLayout;

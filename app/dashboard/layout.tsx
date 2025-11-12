@@ -1,5 +1,5 @@
 import { currentUser } from '@/actions/auth-server';
-import { DashboardLayout } from '@/components/features/dashboard/layout/dashboard-layout';
+import DashboardLayoutClient from '@/components/features/dashboard/layout/dashboard layout-client';
 import { redirect } from 'next/navigation';
 
 interface LayoutProps {
@@ -19,7 +19,7 @@ const Layout = async ({ children }: LayoutProps) => {
     redirect('/');
   }
 
-  return <DashboardLayout>{children}</DashboardLayout>;
+  return <DashboardLayoutClient>{children}</DashboardLayoutClient>;
 };
 
 export default Layout;

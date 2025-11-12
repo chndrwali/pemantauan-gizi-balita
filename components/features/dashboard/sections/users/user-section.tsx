@@ -15,10 +15,12 @@ import { DEFAULT_LIMIT } from '@/lib/utils';
 import { useTRPC } from '@/trpc/client';
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { Filter, Search, Trash2Icon, X } from 'lucide-react';
+import { EyeIcon, Filter, PencilLineIcon, Search, Trash2Icon, X } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { toast } from 'sonner';
+import { UserUpdateModal } from './user-update-modal';
+import { UserDetailModal } from './user-detail-modal';
 
 export const UsersSection = () => {
   return (
@@ -106,6 +108,9 @@ const UsersSectionSuspense = () => {
   const [role, setRole] = useState<string | undefined>(undefined);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isUpdateOpen, setIsUpdateOpen] = useState(false);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [selectedIdForUpdate, setSelectedIdForUpdate] = useState<string>('');
 
   const { data, refetch } = useSuspenseQuery(
     trpc.usersAdmin.getMany.queryOptions({
@@ -238,6 +243,8 @@ const UsersSectionSuspense = () => {
   return (
     <div className="flex flex-col gap-6 py-6">
       <AlertBulkDelete open={isConfirmOpen} onOpenChange={setIsConfirmOpen} selectedItems={selectedItems.length} confirmDelete={confirmDelete} />
+      <UserUpdateModal id={selectedIdForUpdate} open={isUpdateOpen} onOpenChange={setIsUpdateOpen} />
+      <UserDetailModal id={selectedIdForUpdate} open={isDetailOpen} onOpenChange={setIsDetailOpen} />
       <div className="px-6">
         {/* Filters */}
         <div className="mb-3 grid gap-3 sm:grid-cols-3">
@@ -372,6 +379,36 @@ const UsersSectionSuspense = () => {
                         <div className="text-xs text-muted-foreground">
                           {selectedItems.length} dipilih dari {allUsers.length} akun
                         </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const selectedId = selectedItems[0];
+                            if (selectedId) {
+                              setSelectedIdForUpdate(selectedId);
+                              setIsDetailOpen(true);
+                            }
+                          }}
+                          disabled={selectedItems.length !== 1}
+                        >
+                          <EyeIcon className="size-4" /> Detail Pengguna
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            const selectedId = selectedItems[0];
+                            if (selectedId) {
+                              setSelectedIdForUpdate(selectedId);
+                              setIsUpdateOpen(true);
+                            }
+                          }}
+                          disabled={selectedItems.length !== 1}
+                        >
+                          <span className="flex items-center gap-2">
+                            <PencilLineIcon className="size-4" /> Update Pengguna
+                          </span>
+                        </Button>
                         <Button variant="destructive" size="sm" onClick={handleDelete} disabled={selectedItems.length === 0 || bulkDelete.isPending}>
                           {bulkDelete.isPending ? (
                             <span className="flex items-center gap-2">

@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { toast } from 'sonner';
 import { useForm, useWatch } from 'react-hook-form';
-import { registerSchema } from '@/lib/form-schema';
+import { updateUserSchema } from '@/lib/form-schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,16 +11,20 @@ import { Form, FormControl, FormField, FormLabel, FormItem, FormMessage } from '
 import { Spinner } from '@/components/ui/spinner';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Role } from '@/lib/generated/prisma/enums';
-import { useMemo, useState, useTransition } from 'react';
-import { EyeIcon, EyeOffIcon } from 'lucide-react';
+import { useEffect, useMemo, useState, useTransition } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import bandung from '@/lib/data/bandung-kecamatan-kelurahan.json';
-import { register } from '@/actions/register';
-import { FormSuccess } from './form-success';
-import { FormError } from './form-error';
-import { normalizePhone } from '@/lib/utils';
+import { FormSuccess } from '@/components/features/auth/form-success';
+import { FormError } from '@/components/features/auth/form-error';
+import { useTRPC } from '@/trpc/client';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
-type RegisterFormValues = z.infer<typeof registerSchema>;
+interface Props {
+  userId: string;
+  onSuccess: () => void;
+}
+
+type UpdateUserFormValues = z.infer<typeof updateUserSchema>;
 const labelize = (val: string) => {
   if (val === 'ORANGTUA') return 'Orang Tua/Wali';
 
@@ -35,20 +39,20 @@ const ROLE_OPTIONS = Object.values(Role).filter((r) => r !== 'PUSKESMAS') as Arr
 const ALL_KECAMATAN = Object.keys(bandung);
 const RT_RW = Array.from({ length: 32 }, (_, i) => String(i + 1));
 
-export function RegisterForm() {
-  // const router = useRouter();
+export function UpdateUserForm({ userId, onSuccess }: Props) {
+  const trpc = useTRPC();
+  const { data, isLoading, refetch } = useQuery(trpc.usersAdmin.getByID.queryOptions({ id: userId! }, { enabled: !!userId }));
+  const user = data?.user;
 
-  const [passwordVisible, setPasswordVisible] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isPending, startTransition] = useTransition();
 
-  const form = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
+  const form = useForm<UpdateUserFormValues>({
+    resolver: zodResolver(updateUserSchema),
     defaultValues: {
       nik: '',
       email: '',
-      password: '',
       address: '',
       kecamatan: '',
       kelurahan: '',
@@ -63,39 +67,116 @@ export function RegisterForm() {
     },
   });
 
-  const onSubmit = async (values: RegisterFormValues) => {
+  useEffect(() => {
+    if (!user) return;
+
+    const clean = (v?: string | null): string => (typeof v === 'string' ? v.trim() : '');
+    const normalizeRtRw = (v?: string | null): string | undefined => {
+      if (!v) return undefined;
+      const digits = v.replace(/\D/g, '');
+      if (!digits) return undefined;
+      const n = Number(digits);
+      if (!n || n < 1 || n > 32) return undefined;
+      return String(n);
+    };
+
+    const bandungMap = bandung as Record<string, string[]>;
+    const rawKec = clean(user.kecamatan);
+    const kecamatanKey = rawKec ? ALL_KECAMATAN.find((k) => k.toLowerCase() === rawKec.toLowerCase()) : undefined;
+
+    const rawKel = clean(user.kelurahan);
+    let kelurahanValue: string | undefined = undefined;
+    if (kecamatanKey && rawKel && bandungMap[kecamatanKey]) {
+      const foundKel = bandungMap[kecamatanKey].find((kl) => kl.toLowerCase() === rawKel.toLowerCase());
+      kelurahanValue = foundKel ?? rawKel;
+    } else if (rawKel) {
+      kelurahanValue = rawKel;
+    }
+
+    // debug log (hapus kalau udah oke)
+
+    console.log('DBG user:', { rawKec, kecamatanKey, rawKel, kelurahanValue, rt: user.rt, rw: user.rw });
+
+    form.reset({
+      nik: user.nik ?? '',
+      name: user.name ?? '',
+      username: user.username ?? '',
+      phone: user.phone ?? '',
+      address: user.address ?? '',
+      rt: normalizeRtRw(user.rt),
+      rw: normalizeRtRw(user.rw),
+      kecamatan: kecamatanKey ?? rawKec ?? undefined, // set found key, else raw value, else undefined
+      kelurahan: kelurahanValue ?? undefined,
+      kodeWilayah: user.kodeWilayah ?? '',
+      nomorSIP: user.nomorSIP ?? '',
+      email: user.email ?? '',
+      role: user.role as 'KADER' | 'PETUGAS' | 'ORANGTUA',
+    });
+
+    void form.trigger(['rt', 'rw', 'kecamatan', 'kelurahan']);
+  }, [user, form]);
+
+  const updateMutation = useMutation(
+    trpc.usersAdmin.updateUser.mutationOptions({
+      onSuccess: () => {
+        // success handler
+        toast.success('User berhasil diperbarui');
+        setSuccess('User berhasil diperbarui');
+        setError('');
+        onSuccess(); // close modal parent
+        refetch(); // refresh user data
+      },
+      onError: (err) => {
+        const msg = err?.message ?? 'Gagal memperbarui user';
+        toast.error(msg);
+        setError(msg);
+      },
+    })
+  );
+
+  const onSubmit = async (values: UpdateUserFormValues) => {
+    if (!userId) {
+      setError('User ID tidak tersedia');
+      return;
+    }
+
     setError('');
     setSuccess('');
-    startTransition(async () => {
-      try {
-        const data = await register(values);
 
-        if (data.error) {
-          setError(data.error);
-          toast.error('Gagal Mendaftarkan Akun');
-          return;
-        }
+    startTransition(() => {
+      const payload: {
+        id: string;
+        nik?: string;
+        name?: string;
+        username?: string;
+        phone?: string;
+        address?: string;
+        rt?: string;
+        rw?: string;
+        kelurahan?: string;
+        kecamatan?: string;
+        kodeWilayah?: string;
+        nomorSIP?: string;
+        email?: string;
+        password?: string;
+        role?: 'KADER' | 'PETUGAS' | 'ORANGTUA';
+      } = { id: userId };
 
-        setSuccess(data.success ?? 'Akun berhasil dibuat');
-        toast.success(data.success ?? 'Akun berhasil dibuat');
+      if (values.nik?.trim()) payload.nik = values.nik.trim();
+      if (values.name?.trim()) payload.name = values.name.trim();
+      if (values.username?.trim()) payload.username = values.username.trim();
+      if (values.phone?.trim()) payload.phone = values.phone.trim();
+      if (values.address?.trim()) payload.address = values.address.trim();
+      if (values.rt?.trim()) payload.rt = values.rt.trim();
+      if (values.rw?.trim()) payload.rw = values.rw.trim();
+      if (values.kelurahan?.trim()) payload.kelurahan = values.kelurahan.trim();
+      if (values.kecamatan?.trim()) payload.kecamatan = values.kecamatan.trim();
+      if (values.kodeWilayah?.trim()) payload.kodeWilayah = values.kodeWilayah.trim();
+      if (values.nomorSIP?.trim()) payload.nomorSIP = values.nomorSIP.trim();
+      if (values.email?.trim()) payload.email = values.email.trim();
+      if (values.role) payload.role = values.role as 'KADER' | 'PETUGAS' | 'ORANGTUA';
 
-        const rawPhone = values.phone ?? '';
-        const waPhone = normalizePhone(rawPhone);
-
-        if (waPhone) {
-          const plainPassword = values.password;
-          const msgLine = [`Halo ${values.name || 'Bapak/Ibu'},`, `Akun Anda di Sistem Puskesmas Sukawarna telah dibuat oleh Admin.`, `Email: ${values.email ?? '-'}`, `Password: ${plainPassword}`];
-          const msg = msgLine.join('\n');
-          const waUrl = `https://wa.me/${waPhone}?text=${encodeURIComponent(msg)}`;
-          window.open(waUrl, '_blank', 'noopener,noreferrer');
-        } else {
-          toast('Nomor WA tidak tersedia untuk dikirimi pesan.');
-        }
-        form.reset();
-      } catch (error) {
-        console.error('register error (client):', error);
-        toast.error('Gagal Mendaftarkan Akun');
-      }
+      updateMutation.mutate(payload);
     });
   };
 
@@ -113,17 +194,30 @@ export function RegisterForm() {
     return (bandung as any)[kecamatan] as string[];
   }, [kecamatan]);
 
+  if (!userId) {
+    return <p className="p-4 text-sm text-muted-foreground">Tidak ada user yang dipilih.</p>;
+  }
+  if (isLoading && !user) {
+    return (
+      <div className="p-4 flex items-center place-content-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
+  if (!user) {
+    return <p className="p-4 text-sm text-destructive">Pengguna tidak ditemukan.</p>;
+  }
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Tambah Akun</h1>
-            <p className="text-xs text-muted-foreground">Penambahan akun hanya dapat dilakukan melalui dashboard admin.</p>
+            <p className="text-xs text-muted-foreground">Perubahan akun hanya dapat dilakukan melalui dashboard admin.</p>
           </div>
           <div className="flex flex-col gap-y-2">
             <Button disabled={isPending} variant="secondary" type="submit">
-              {isPending ? <Spinner /> : 'Buat Akun'}
+              {isPending ? <Spinner /> : 'Update'}
             </Button>
             <FormSuccess message={success} />
             <FormError message={error} />
@@ -456,47 +550,6 @@ export function RegisterForm() {
                       disabled={isPending}
                     />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input
-                        {...field}
-                        autoComplete="new-password"
-                        placeholder="Min. 8 karakter, campur huruf, angka & simbol"
-                        type={passwordVisible ? 'text' : 'password'}
-                        disabled={isPending}
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const v = e.target.value.replace(/^\s+|\s+$/g, '');
-                          field.onChange(v);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === ' ' && (e.currentTarget.selectionStart ?? 0) === 0) {
-                            e.preventDefault();
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setPasswordVisible((v) => !v)}
-                        className="absolute inset-y-0 right-0 flex items-center px-3 focus:outline-none"
-                        aria-label={passwordVisible ? 'Sembunyikan password' : 'Tampilkan password'}
-                        aria-pressed={passwordVisible}
-                      >
-                        {passwordVisible ? <EyeOffIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
-                      </button>
-                    </div>
-                  </FormControl>
-                  {/* <p className="text-xs text-muted-foreground mt-1">Minimal 8 karakter & mengandung huruf besar, huruf kecil, angka, dan simbol.</p> */}
                   <FormMessage />
                 </FormItem>
               )}

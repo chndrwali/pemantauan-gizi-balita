@@ -23,7 +23,9 @@ export const DashboardNavbar = () => {
           </div>
         </div>
 
-        <div className="flex-1 text-center text-sm text-muted-foreground">{formattedDate}</div>
+        <div className="flex-1 text-center text-sm text-muted-foreground" suppressHydrationWarning={true}>
+          {formattedDate}
+        </div>
       </div>
     </nav>
   );
