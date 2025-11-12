@@ -1,6 +1,7 @@
 import {
   AlertTriangle,
   ArrowRight,
+  Baby,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -53,6 +54,7 @@ export const Icons = {
   post: FileText,
   page: File,
   userPen: UserPen,
+  baby: Baby,
   user2: UserCircle2Icon,
   media: Image,
   settings: Settings,

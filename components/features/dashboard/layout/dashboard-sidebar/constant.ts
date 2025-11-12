@@ -2,17 +2,15 @@ import { NavItem } from './types';
 
 export const adminSideBarLink: NavItem[] = [
   {
-    title: 'Dashboard',
-    url: '/dashboard',
-    icon: 'dashboard',
-    isActive: false,
-    shortcut: ['d', 'd'],
-    items: [], // Empty array as there are no child items for Dashboard
-  },
-  {
     title: 'Pengguna',
     url: '/dashboard/users',
     icon: 'userPen',
+    isActive: true,
+  },
+  {
+    title: 'Balita',
+    url: '/dashboard/balita',
+    icon: 'baby',
   },
   // {
   //   title: 'Table',
