@@ -1,4 +1,5 @@
 import { currentUser } from '@/actions/auth-server';
+import PetugasLayoutClient from '@/components/features/petugas/layout/petugas-layout-client';
 import { redirect } from 'next/navigation';
 
 interface LayoutProps {
@@ -18,7 +19,7 @@ const Layout = async ({ children }: LayoutProps) => {
     redirect('/');
   }
 
-  return <>{children}</>;
+  return <PetugasLayoutClient>{children}</PetugasLayoutClient>;
 };
 
 export default Layout;

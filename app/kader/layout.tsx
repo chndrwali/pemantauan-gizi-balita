@@ -1,4 +1,5 @@
 import { currentUser } from '@/actions/auth-server';
+import KaderLayoutClient from '@/components/features/kader/layout/kader-layout-client';
 import { redirect } from 'next/navigation';
 
 interface LayoutProps {
@@ -18,7 +19,7 @@ const Layout = async ({ children }: LayoutProps) => {
     redirect('/');
   }
 
-  return <>{children}</>;
+  return <KaderLayoutClient>{children}</KaderLayoutClient>;
 };
 
 export default Layout;
