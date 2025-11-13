@@ -75,10 +75,7 @@ export const ProfileUser = ({ user }: Props) => {
               {/* quick contact */}
               <div className="mt-5 w-full">
                 <button onClick={() => window.open(`tel:${user.phone ?? ''}`)} className="w-full py-2 rounded-md bg-emerald-600 text-white font-medium">
-                  Hubungi: {user.phone ?? '-'}
-                </button>
-                <button onClick={() => toast('Fitur pesan ke petugas (placeholder)')} className="w-full mt-3 py-2 rounded-md border border-slate-100 bg-white text-slate-800">
-                  Kirim Pesan ke Petugas
+                  {user.phone ?? '-'}
                 </button>
               </div>
             </div>
@@ -87,10 +84,10 @@ export const ProfileUser = ({ user }: Props) => {
           {/* MIDDLE: Action cards (bigger on desktop) */}
           <div className="col-span-1 md:col-span-1">
             <div className="grid grid-cols-2 md:grid-cols-1 gap-3">
-              <ActionCardLarge label="Jadwal Imunisasi" href="/ortu/jadwal" icon="calendar" />
-              <ActionCardLarge label="Catatan Balita" href="/ortu/catatan" icon="file-text" />
-              <ActionCardLarge label="Posyandu / Janji" href="/ortu/janji" icon="map-pin" />
-              <ActionCardLarge label="Daftar Anak" href="/ortu/anak" icon="users" />
+              <ActionCardLarge label="Jadwal Imunisasi" href="/orangtua/jadwal" icon="calendar" />
+              <ActionCardLarge label="Catatan Balita" href="/orangtua/catatan" icon="file-text" />
+              <ActionCardLarge label="Posyandu / Janji" href="/orangtua/janji" icon="map-pin" />
+              <ActionCardLarge label="Daftar Anak" href="/orangtua/anak" icon="users" />
             </div>
 
             {/* small summary */}
@@ -120,9 +117,6 @@ export const ProfileUser = ({ user }: Props) => {
               <MiniInfo label="RT / RW" value={`${user.rt ?? '-'} / ${user.rw ?? '-'}`} />
               <MiniInfo label="Kelurahan" value={user.kelurahan ?? '-'} />
               <MiniInfo label="Kecamatan" value={user.kecamatan ?? '-'} />
-              <div className="mt-2 text-xs text-slate-500">
-                Role internal: <span className="font-medium text-slate-700">{meta.label}</span>
-              </div>
             </div>
 
             <div className="mt-4 flex gap-2">
@@ -199,11 +193,6 @@ export const ProfileUser = ({ user }: Props) => {
                 <InfoRow label="No. SIP" value={user.nomorSIP ?? '-'} />
                 <InfoRow label="Kode Wilayah" value={user.kodeWilayah ?? '-'} />
               </>
-
-              {/* Small meta */}
-              <div className="mt-2 text-xs text-slate-500">
-                Role internal: <span className="font-medium text-slate-700">{meta.label}</span>
-              </div>
             </div>
           </div>
 

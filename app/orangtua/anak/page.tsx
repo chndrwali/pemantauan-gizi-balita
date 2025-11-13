@@ -1,4 +1,4 @@
-import { OrangTuaSections } from '@/components/features/orangtua/sections/orangtua-beranda';
+import { OrangTuaAnakSection } from '@/components/features/orangtua/sections/orangtua-anak';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -6,7 +6,7 @@ export const metadata: Metadata = {
 };
 
 const Page = () => {
-  return <OrangTuaSections />;
+  return <OrangTuaAnakSection />;
 };
 
 export default Page;

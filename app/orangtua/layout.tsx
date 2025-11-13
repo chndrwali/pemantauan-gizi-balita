@@ -1,4 +1,5 @@
 import { currentUser } from '@/actions/auth-server';
+import OrangTuaLayoutClient from '@/components/features/orangtua/orangtua-layout-client';
 import { redirect } from 'next/navigation';
 
 interface LayoutProps {
@@ -18,7 +19,7 @@ const Layout = async ({ children }: LayoutProps) => {
     redirect('/');
   }
 
-  return <>{children}</>;
+  return <OrangTuaLayoutClient>{children}</OrangTuaLayoutClient>;
 };
 
 export default Layout;
