@@ -2,6 +2,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Baby,
+  BellRing,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -82,4 +83,5 @@ export const Icons = {
   career: PenTool,
   review: TrendingUp,
   table: Table,
+  notification: BellRing,
 };

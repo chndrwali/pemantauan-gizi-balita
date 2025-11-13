@@ -12,14 +12,6 @@ import { logout } from '@/actions/logout';
 import { toast } from 'sonner';
 import { useCurrentUser } from '@/actions/auth-client';
 
-// interface OrangTuaNavbarProps {
-//   user?: {
-//     name?: string | null;
-//     email?: string | null;
-//     avatarUrl?: string | null;
-//   } | null;
-// }
-
 const MENU = [
   { title: 'Beranda', href: '/orangtua', icon: Home },
   { title: 'Daftar Anak', href: '/orangtua/anak', icon: Users },

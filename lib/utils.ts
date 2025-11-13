@@ -32,3 +32,12 @@ export const normalizePhone = (phone?: string) => {
   if (raw.startsWith('+')) return raw;
   return '+' + raw;
 };
+
+export function formatNumber(value: number | string | null | undefined): string {
+  if (value === null || value === undefined) return '0';
+
+  const num = Number(value);
+  if (Number.isNaN(num)) return String(value);
+
+  return new Intl.NumberFormat('id-ID').format(num);
+}

@@ -37,3 +37,17 @@ export const updateUserSchema = z.object({
   email: z.email('Mohon masukan email yang valid'),
   role: z.enum(['PUSKESMAS', 'KADER', 'PETUGAS', 'ORANGTUA']),
 });
+
+export const notificationSchema = z.object({
+  userId: z.string().uuid(),
+  title: z.string(),
+  body: z.string(),
+  type: z.string().default('GENERAL'),
+});
+
+export const sendToAllSchema = z.object({
+  role: z.enum(['KADER', 'ORANGTUA']),
+  title: z.string(),
+  body: z.string(),
+  type: z.string().default('BROADCAST'),
+});

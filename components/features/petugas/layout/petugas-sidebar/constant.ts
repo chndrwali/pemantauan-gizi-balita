@@ -12,6 +12,11 @@ export const petugasSideBarLink: NavItem[] = [
     url: '/petugas/balita',
     icon: 'baby',
   },
+  {
+    title: 'Notifikasi',
+    url: '/petugas/notification',
+    icon: 'notification',
+  },
   // {
   //   title: 'Table',
   //   url: '#',
