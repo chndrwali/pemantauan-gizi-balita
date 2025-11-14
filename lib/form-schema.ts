@@ -51,3 +51,49 @@ export const sendToAllSchema = z.object({
   body: z.string(),
   type: z.string().default('BROADCAST'),
 });
+
+export const createBalitaSchema = z.object({
+  orangTuaId: z.string().uuid(),
+  nama: z.string().min(1),
+  nikAnak: z.string().optional().nullable(),
+  noKIA: z.string().optional().nullable(),
+  tanggalLahir: z.preprocess((v) => (typeof v === 'string' ? new Date(v) : v), z.date()),
+  jenisKelamin: z.enum(['L', 'P']),
+  anakKe: z.number().int().optional().nullable(),
+  bbLahirKg: z.number().optional().nullable(),
+  tbLahirCm: z.number().optional().nullable(),
+  alamat: z.string().optional().nullable(),
+  kelurahan: z.string().optional().nullable(),
+  kecamatan: z.string().optional().nullable(),
+  aktif: z.boolean().optional().default(true),
+});
+
+export const addTimbangSimpleSchema = z.object({
+  balitaId: z.string().uuid(),
+  tanggal: z.preprocess((v) => (typeof v === 'string' ? new Date(v) : v), z.date()),
+  beratKg: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional().nullable()),
+  tinggiCm: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional().nullable()),
+  lilaCm: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional().nullable()),
+  lkCm: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional().nullable()),
+
+  // optional reference for z-score calculation:
+  // either provide lms.{wfa|hfa|wfh}.(L,M,S) OR meanSd.{wfa|hfa|wfh}.{mean,sd}
+  lms: z
+    .object({
+      wfa: z.object({ L: z.number(), M: z.number(), S: z.number() }).optional(),
+      hfa: z.object({ L: z.number(), M: z.number(), S: z.number() }).optional(),
+      wfh: z.object({ L: z.number(), M: z.number(), S: z.number() }).optional(),
+    })
+    .optional(),
+  meanSd: z
+    .object({
+      wfa: z.object({ mean: z.number(), sd: z.number() }).optional(),
+      hfa: z.object({ mean: z.number(), sd: z.number() }).optional(),
+      wfh: z.object({ mean: z.number(), sd: z.number() }).optional(),
+    })
+    .optional(),
+
+  source: z.enum(['ORANGTUA', 'KADER', 'PETUGAS', 'PUSKESMAS']).optional().default('PUSKESMAS'),
+  pencatatId: z.string().uuid().optional().nullable(),
+  catatan: z.string().optional().nullable(),
+});
