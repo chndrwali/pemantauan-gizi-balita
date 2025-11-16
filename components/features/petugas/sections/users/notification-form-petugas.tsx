@@ -52,6 +52,7 @@ export const NotificationFormPetugas = () => {
     trpc.usersPetugas.sendNotification.mutationOptions({
       onSuccess: () => {
         toast.success('Notifikasi terkirim ke 1 user.');
+        refetch();
       },
       onError: () => {
         toast.error('Gagal mengirim notifikasi');
@@ -62,6 +63,7 @@ export const NotificationFormPetugas = () => {
     trpc.usersPetugas.sendToAll.mutationOptions({
       onSuccess: () => {
         toast.success('Notifikasi terkirim ke seluruh kader dan orang tua');
+        refetch();
       },
       onError: () => {
         toast.error('Gagal mengirim notifikasi');
@@ -98,10 +100,8 @@ export const NotificationFormPetugas = () => {
           title: data.title,
           type: data.type,
         });
-        refetch();
       } else {
         await sendToAll.mutate({ body: data.body, role: data.role!, title: data.title, type: 'BROADCAST' });
-        refetch();
       }
     });
 

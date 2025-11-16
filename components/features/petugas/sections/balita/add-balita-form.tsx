@@ -16,16 +16,31 @@ import { Resolver, useForm } from 'react-hook-form';
 import z from 'zod';
 import { id } from 'date-fns/locale';
 import { useTRPC } from '@/trpc/client';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { useTransition } from 'react';
 
 type FormValues = z.infer<typeof createBalitaSchema>;
 const resolver = zodResolver(createBalitaSchema) as unknown as Resolver<FormValues>;
 
 export const AddBalitaForm = () => {
   const trpc = useTRPC();
+  const [isPending, startTransition] = useTransition();
 
-  const { data, isLoading } = useQuery(trpc.balita.getOrangTua.queryOptions({ role: 'ORANGTUA' }));
+  const { data, isLoading, refetch } = useQuery(trpc.balita.getOrangTua.queryOptions({ role: 'ORANGTUA' }));
   const user = data;
+
+  const mutate = useMutation(
+    trpc.balita.createBalita.mutationOptions({
+      onSuccess: () => {
+        toast.success('Balita di tambahkan');
+        refetch();
+      },
+      onError: () => {
+        toast.error('Kesalahan');
+      },
+    })
+  );
 
   const form = useForm<FormValues>({
     resolver,
@@ -46,8 +61,10 @@ export const AddBalitaForm = () => {
     },
   });
 
-  const onSubmit = (values: FormValues) => {
-    console.log(values);
+  const onSubmit = async (values: FormValues) => {
+    startTransition(() => {
+      mutate.mutate(values);
+    });
   };
 
   return (
@@ -63,7 +80,7 @@ export const AddBalitaForm = () => {
                 <FormItem>
                   <FormLabel>Nama Balita</FormLabel>
                   <FormControl>
-                    <Input placeholder="Contoh: Ahmad" {...field} />
+                    <Input placeholder="Contoh: Ahmad" {...field} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -78,7 +95,7 @@ export const AddBalitaForm = () => {
                 <FormItem>
                   <FormLabel>Jenis Kelamin</FormLabel>
                   <FormControl>
-                    <Select onValueChange={(v) => field.onChange(v)} value={field.value}>
+                    <Select onValueChange={(v) => field.onChange(v)} value={field.value} disabled={isPending}>
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih jenis kelamin" />
                       </SelectTrigger>
@@ -125,7 +142,7 @@ export const AddBalitaForm = () => {
                 <FormItem>
                   <FormLabel>Pilih User</FormLabel>
                   <FormControl>
-                    <Select onValueChange={(v) => field.onChange(v)} value={field.value ?? undefined}>
+                    <Select onValueChange={(v) => field.onChange(v)} value={field.value ?? undefined} disabled={isPending}>
                       <SelectTrigger>
                         <SelectValue placeholder={isLoading ? 'Memuat...' : 'Pilih user'} />
                       </SelectTrigger>
@@ -158,7 +175,7 @@ export const AddBalitaForm = () => {
                   <FormItem>
                     <FormLabel>NIK Anak</FormLabel>
                     <FormControl>
-                      <Input placeholder="NIK " {...field} />
+                      <Input placeholder="NIK " {...field} disabled={isPending} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -172,7 +189,7 @@ export const AddBalitaForm = () => {
                   <FormItem>
                     <FormLabel>No KIA</FormLabel>
                     <FormControl>
-                      <Input placeholder="No KIA (opsional)" {...field} />
+                      <Input placeholder="No KIA (opsional)" {...field} disabled={isPending} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -199,6 +216,7 @@ export const AddBalitaForm = () => {
                           const v = e.target.value;
                           field.onChange(v === '' ? undefined : parseFloat(v));
                         }}
+                        disabled={isPending}
                       />
                     </FormControl>
                     <FormMessage />
@@ -221,6 +239,7 @@ export const AddBalitaForm = () => {
                           const v = e.target.value;
                           field.onChange(v === '' ? undefined : parseInt(v, 10));
                         }}
+                        disabled={isPending}
                       />
                     </FormControl>
                     <FormMessage />
@@ -243,6 +262,7 @@ export const AddBalitaForm = () => {
                           const v = e.target.value;
                           field.onChange(v === '' ? undefined : parseInt(v, 10));
                         }}
+                        disabled={isPending}
                       />
                     </FormControl>
                     <FormMessage />
@@ -259,7 +279,7 @@ export const AddBalitaForm = () => {
                 <FormItem>
                   <FormLabel>Alamat</FormLabel>
                   <FormControl>
-                    <Input placeholder="Alamat lengkap" {...field} defaultValue={field.value ?? ''} value={field.value ?? ''} />
+                    <Input placeholder="Alamat lengkap" {...field} defaultValue={field.value ?? ''} value={field.value ?? ''} disabled={isPending} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -274,7 +294,7 @@ export const AddBalitaForm = () => {
                   <FormItem>
                     <FormLabel>Kecamatan</FormLabel>
                     <FormControl>
-                      <Input placeholder="Kecamatan" {...field} defaultValue={field.value ?? ''} value={field.value ?? ''} />
+                      <Input placeholder="Kecamatan" {...field} defaultValue={field.value ?? ''} value={field.value ?? ''} disabled={isPending} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -288,7 +308,7 @@ export const AddBalitaForm = () => {
                   <FormItem>
                     <FormLabel>Kelurahan</FormLabel>
                     <FormControl>
-                      <Input placeholder="Kelurahan" {...field} defaultValue={field.value ?? ''} value={field.value ?? ''} />
+                      <Input placeholder="Kelurahan" {...field} defaultValue={field.value ?? ''} value={field.value ?? ''} disabled={isPending} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -304,7 +324,7 @@ export const AddBalitaForm = () => {
                 <FormItem>
                   <FormLabel>Status Aktif</FormLabel>
                   <FormControl>
-                    <Select onValueChange={(v) => field.onChange(v === 'true')} value={String(field.value ?? true)}>
+                    <Select onValueChange={(v) => field.onChange(v === 'true')} value={String(field.value ?? true)} disabled={isPending}>
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih status" />
                       </SelectTrigger>
