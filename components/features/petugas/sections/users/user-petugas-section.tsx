@@ -11,7 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DEFAULT_LIMIT } from '@/lib/utils';
 import { useTRPC } from '@/trpc/client';
-import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { EyeIcon, Filter, Search, X } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';

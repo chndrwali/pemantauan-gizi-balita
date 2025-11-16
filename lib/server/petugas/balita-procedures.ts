@@ -127,6 +127,12 @@ export const balitaRouter = createTRPCRouter({
           tanggalLahir: true,
           jenisKelamin: true,
           aktif: true,
+          orangTuaId: true,
+          alamat: true,
+          bbLahirKg: true,
+          tbLahirCm: true,
+          kecamatan: true,
+          kelurahan: true,
 
           orangTua: {
             select: {
@@ -163,5 +169,25 @@ export const balitaRouter = createTRPCRouter({
       total,
       pageCount: Math.ceil(total / limit),
     };
+  }),
+  getOrangTua: baseProcedure.input(z.object({ role: z.enum(['ORANGTUA', 'KADER']) })).query(async ({ input }) => {
+    const { role } = input;
+
+    const where: Prisma.UserWhereInput = {
+      role: role ? { equals: role } : { in: ['ORANGTUA'] },
+    };
+
+    const items = await prisma.user.findMany({
+      where,
+      select: {
+        id: true,
+        name: true,
+        role: true,
+        email: true,
+      },
+      orderBy: [{ createdAt: 'desc' }],
+    });
+
+    return items;
   }),
 });

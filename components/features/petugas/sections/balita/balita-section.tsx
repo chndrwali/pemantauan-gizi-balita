@@ -19,17 +19,27 @@ import { ErrorBoundary } from 'react-error-boundary';
 // import { toast } from 'sonner';
 import { UserDetailModal } from '@/components/features/dashboard/sections/users/user-detail-modal';
 
-export const UsersPetugasSection = () => {
+function fmtDateShort(d?: string | Date | null) {
+  if (!d) return '-';
+  try {
+    const date = typeof d === 'string' ? new Date(d) : d;
+    return format(date, 'd MMM yyyy');
+  } catch {
+    return String(d);
+  }
+}
+
+export const BalitaSection = () => {
   return (
-    <Suspense fallback={<UsersPetugasSectionSkeleton />}>
+    <Suspense fallback={<BalitaSectionSkeleton />}>
       <ErrorBoundary fallback={<p className="p-6 text-sm text-destructive">Terjadi Kesalahan...</p>}>
-        <UsersPetugasSectionSuspense />
+        <BalitaSectionSuspense />
       </ErrorBoundary>
     </Suspense>
   );
 };
 
-const UsersPetugasSectionSkeleton = () => {
+const BalitaSectionSkeleton = () => {
   return (
     <div className="flex flex-col gap-4 py-6">
       <div className="rounded-md border overflow-hidden">
@@ -96,7 +106,7 @@ const UsersPetugasSectionSkeleton = () => {
   );
 };
 
-const UsersPetugasSectionSuspense = () => {
+const BalitaSectionSuspense = () => {
   const trpc = useTRPC();
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
@@ -108,34 +118,33 @@ const UsersPetugasSectionSuspense = () => {
   const [selectedIdForUpdate, setSelectedIdForUpdate] = useState<string>('');
 
   const { data } = useSuspenseQuery(
-    trpc.usersPetugas.getMany.queryOptions({
+    trpc.balita.getManyBalita.queryOptions({
       limit: DEFAULT_LIMIT,
-      role: role ? (role as 'KADER' | 'PETUGAS' | 'ORANGTUA') : undefined,
       search: debouncedSearch || undefined,
     })
   );
 
-  const allUsers = data.items || [];
+  const allBalita = data.items || [];
   const pageCount = 1;
 
-  const toggleSelectAll = () => {
-    const selectableUsers = allUsers.filter((user) => user.role !== 'PUSKESMAS');
-    if (selectedItems.length === selectableUsers.length) {
-      setSelectedItems([]);
-    } else {
-      setSelectedItems(allUsers.map((user) => user.id));
-    }
-  };
+  // const toggleSelectAll = () => {
+  //   const selectableUsers = allUsers.filter((user) => user.role !== 'PUSKESMAS');
+  //   if (selectedItems.length === selectableUsers.length) {
+  //     setSelectedItems([]);
+  //   } else {
+  //     setSelectedItems(allUsers.map((user) => user.id));
+  //   }
+  // };
 
-  const toggleSelectItem = (id: string) => {
-    const user = allUsers.find((user) => user.id === id);
-    if (user?.role === 'PUSKESMAS') return;
-    if (selectedItems.includes(id)) {
-      setSelectedItems(selectedItems.filter((itemId) => itemId !== id));
-    } else {
-      setSelectedItems([...selectedItems, id]);
-    }
-  };
+  // const toggleSelectItem = (id: string) => {
+  //   const user = allUsers.find((user) => user.id === id);
+  //   if (user?.role === 'PUSKESMAS') return;
+  //   if (selectedItems.includes(id)) {
+  //     setSelectedItems(selectedItems.filter((itemId) => itemId !== id));
+  //   } else {
+  //     setSelectedItems([...selectedItems, id]);
+  //   }
+  // };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 400);
@@ -211,13 +220,14 @@ const UsersPetugasSectionSuspense = () => {
   return (
     <div className="flex flex-col gap-6 py-6">
       <UserDetailModal id={selectedIdForUpdate} open={isDetailOpen} onOpenChange={setIsDetailOpen} />
+
       <div className="px-6">
         {/* Filters */}
         <div className="mb-3 grid gap-3 sm:grid-cols-3">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="search">Cari (nama / email / username)</Label>
+            <Label htmlFor="search">Cari (nama / NIK / No KIA)</Label>
             <div className="relative">
-              <span className="absolute left-2 top-1/2 -translate-y-1/2">
+              <span className="absolute left-2 top-1/2 -translate-y-1/2 pointer-events-none">
                 <Search className="h-4 w-4 text-muted-foreground" />
               </span>
               <Input id="search" placeholder="Ketik untuk mencari..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-8 pr-8" />
@@ -229,27 +239,13 @@ const UsersPetugasSectionSuspense = () => {
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <Label>Pilih Role</Label>
-            <Select value={role ?? ''} onValueChange={(v) => setRole(v || undefined)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Semua" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="KADER">KADER</SelectItem>
-                <SelectItem value="PETUGAS">PETUGAS</SelectItem>
-                <SelectItem value="ORANGTUA">ORANGTUA</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <div className="flex items-end gap-2">
             <Button
               variant="outline"
               className="w-full sm:w-auto"
               onClick={() => {
-                setRole(undefined);
                 setSearch('');
+                setPage(1);
               }}
             >
               <Filter className="mr-2 h-4 w-4" />
@@ -260,117 +256,154 @@ const UsersPetugasSectionSuspense = () => {
 
         <div className="rounded-md border shadow-sm">
           <div className="overflow-x-auto">
-            <Table className="min-w-[1200px]">
+            <Table className="min-w-[1100px]">
               <TableHeader>
                 <TableRow className="bg-muted/40">
-                  <TableHead className="w-12sticky left-0 bg-muted/40 backdrop-blur supports-backdrop-filter:bg-muted/60 z-10">
-                    <Checkbox checked={allUsers.length > 0 && selectedItems.length === allUsers.length} onCheckedChange={toggleSelectAll} aria-label="Select all items" />
-                  </TableHead>
-                  <TableHead className="min-w-[220px]">Identitas</TableHead>
-                  <TableHead className="min-w-40">Kontak</TableHead>
-                  <TableHead className="min-w-[120px]">Tipe Pengguna</TableHead>
-                  <TableHead className="min-w-[220px]">Alamat</TableHead>
-                  <TableHead className="min-w-[140px]">Wilayah</TableHead>
-                  <TableHead className="min-w-[140px]">SIP</TableHead>
+                  <TableHead className="w-12 sticky left-0 bg-muted/40 z-10" />
+                  <TableHead className="min-w-[240px]">Identitas</TableHead>
+                  <TableHead className="min-w-[220px]">Kontak & KIA</TableHead>
+                  <TableHead className="min-w-[120px]">Status</TableHead>
+                  <TableHead className="min-w-[260px]">Alamat & Orang Tua</TableHead>
+                  <TableHead className="min-w-[160px]">Pengukuran Terakhir</TableHead>
                   <TableHead className="min-w-[140px]">Dibuat</TableHead>
-                  <TableHead className="min-w-[140px]">Diubah</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
-                {allUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell className="sticky left-0 bg-background z-10">
-                      <Checkbox checked={selectedItems.includes(user.id)} onCheckedChange={() => toggleSelectItem(user.id)} aria-label={`Select ${user.name}`} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1 max-w-[260px]">
-                        <div className="font-medium leading-tight truncate" title={user.name ?? ''}>
-                          {user.name ?? '-'}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate" title={user.username ?? ''}>
-                          @{user.username ?? '-'}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate" title={user.nik ?? ''}>
-                          NIK: {user.nik ?? '-'}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1 max-w-[220px]">
-                        <div className="text-sm truncate" title={user.email ?? ''}>
-                          {user.email ?? '-'}
-                        </div>
-                        <div className="text-xs text-muted-foreground truncate" title={user.phone ?? ''}>
-                          {user.phone ?? '-'}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="uppercase">
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="max-w-[260px] truncate" title={user.address ?? ''}>
-                        {user.address ?? '-'}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        RT/RW: {user.rt ?? '-'} / {user.rw ?? '-'}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm truncate max-w-[200px]" title={[user.kelurahan, user.kecamatan].filter(Boolean).join(', ')}>
-                        {[user.kelurahan, user.kecamatan].filter(Boolean).join(', ') || '-'}
-                      </div>
-                      <div className="text-xs text-muted-foreground">Kode: {user.kodeWilayah ?? '-'}</div>
-                    </TableCell>
-                    <TableCell>{user.nomorSIP ?? '-'}</TableCell>
-                    <TableCell>{format(new Date(user.createdAt), 'd MMM yyyy')}</TableCell>
-                    <TableCell>{format(new Date(user.updatedAt), 'd MMM yyyy')}</TableCell>
-                  </TableRow>
-                ))}
-                {allUsers.length === 0 && (
+                {allBalita.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="text-center py-6 text-muted-foreground">
-                      Tidak ada user ditemukan
+                    <TableCell colSpan={7} className="text-center py-6 text-muted-foreground">
+                      Tidak ada balita ditemukan
                     </TableCell>
                   </TableRow>
+                ) : (
+                  allBalita.map((b) => {
+                    const pengukuran = Array.isArray(b.pengukuran) && b.pengukuran.length > 0 ? b.pengukuran[0] : undefined;
+                    const orangTua = b.orangTua ?? undefined;
+
+                    return (
+                      <TableRow key={b.id}>
+                        <TableCell className="sticky left-0 bg-background z-10">{/* placeholder untuk checkbox / actions */}</TableCell>
+
+                        {/* Identitas */}
+                        <TableCell>
+                          <div className="flex flex-col gap-1 max-w-[240px]">
+                            <div className="font-medium leading-tight truncate" title={b.nama ?? ''}>
+                              {b.nama ?? '-'}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate" title={b.jenisKelamin ?? ''}>
+                              {b.jenisKelamin ?? '-'}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate" title={b.nikAnak ?? ''}>
+                              NIK: {b.nikAnak ?? '-'}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate" title={b.noKIA ?? ''}>
+                              No KIA: {b.noKIA ?? '-'}
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Kontak & KIA */}
+                        <TableCell>
+                          <div className="flex flex-col gap-1 max-w-[220px]">
+                            <div className="text-sm truncate">{b.tanggalLahir ? fmtDateShort(b.tanggalLahir) : '-'}</div>
+                            <div className="text-xs text-muted-foreground truncate" title={orangTua?.phone ?? ''}>
+                              Orang Tua: {orangTua?.name ?? '-'}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate" title={orangTua?.phone ?? ''}>
+                              HP: {orangTua?.phone ?? '-'}
+                            </div>
+                          </div>
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell>
+                          <Badge variant="secondary" className="uppercase">
+                            {b.aktif ? 'Aktif' : 'Nonaktif'}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Alamat & RT/RW */}
+                        <TableCell>
+                          <div className="max-w-[260px] text-sm truncate" title={b.alamat ?? ''}>
+                            {b.alamat ?? '-'}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Kel/Desa: {b.kelurahan ?? '-'} • Kec: {b.kecamatan ?? '-'}
+                          </div>
+                        </TableCell>
+
+                        {/* Pengukuran Terakhir */}
+                        <TableCell>
+                          {pengukuran ? (
+                            <div className="flex flex-col gap-1 max-w-[160px]">
+                              <div className="text-sm truncate">
+                                {pengukuran.beratKg != null ? `${pengukuran.beratKg} kg` : '-'} / {pengukuran.tinggiCm != null ? `${pengukuran.tinggiCm} cm` : '-'}
+                              </div>
+                              <div className="text-xs text-muted-foreground">{pengukuran.tanggal ? fmtDateShort(pengukuran.tanggal) : '-'}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {pengukuran.statusBBTB ? `BB/TB: ${pengukuran.statusBBTB}` : ''}
+                                {pengukuran.statusBBU ? ` ${pengukuran.statusBBU}` : ''}
+                                {pengukuran.statusTBU ? ` ${pengukuran.statusTBU}` : ''}
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="text-sm text-muted-foreground">Belum ada pengukuran</div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 )}
               </TableBody>
+
               <TableFooter>
                 <TableRow>
-                  <TableCell colSpan={10} className="p-3">
-                    <div className="flex flex-wrap items-center gap-3">
+                  <TableCell colSpan={7} className="p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="inline-flex flex-col gap-2 rounded-lg border bg-muted/30 px-3 py-2">
                         <div className="text-xs text-muted-foreground">
-                          {selectedItems.length} dipilih dari {allUsers.length} akun
+                          {selectedItems.length} dipilih dari {allBalita.length} balita
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const selectedId = selectedItems[0];
-                            if (selectedId) {
-                              setSelectedIdForUpdate(selectedId);
-                              setIsDetailOpen(true);
-                            }
-                          }}
-                          disabled={selectedItems.length !== 1}
-                        >
-                          <EyeIcon className="size-4" /> Detail Pengguna
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const selectedId = selectedItems[0];
+                              if (selectedId) {
+                                setSelectedIdForUpdate(selectedId);
+                                setIsDetailOpen(true);
+                              }
+                            }}
+                            disabled={selectedItems.length !== 1}
+                          >
+                            Detail
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center">
+
+                      <div className="flex items-center gap-2">
                         <Pagination>
-                          <PaginationContent>
-                            <PaginationItem>
-                              <PaginationPrevious onClick={() => page > 1 && handlePageChange(page - 1)} className={page <= 1 ? 'pointer-events-none opacity-50' : ''} />
-                            </PaginationItem>
-                            <div className="flex items-center gap-1">{getPaginationItems()}</div>
-                            <PaginationItem>
-                              <PaginationNext onClick={() => page < pageCount && handlePageChange(page + 1)} className={page >= pageCount ? 'pointer-events-none opacity-50' : ''} />
-                            </PaginationItem>
-                          </PaginationContent>
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" variant="outline" onClick={() => handlePageChange(1)} disabled={page <= 1}>
+                              First
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => handlePageChange(Math.max(1, page - 1))} disabled={page <= 1}>
+                              Prev
+                            </Button>
+
+                            <div className="px-3 text-sm text-slate-700">
+                              Halaman {page} dari {pageCount}
+                            </div>
+
+                            <Button size="sm" variant="outline" onClick={() => handlePageChange(Math.min(pageCount, page + 1))} disabled={page >= pageCount}>
+                              Next
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => handlePageChange(pageCount)} disabled={page >= pageCount}>
+                              Last
+                            </Button>
+                          </div>
                         </Pagination>
                       </div>
                     </div>

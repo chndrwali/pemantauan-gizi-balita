@@ -86,7 +86,8 @@ export const NotificationFormPetugas = () => {
   const mode = useWatch({ control: form.control, name: 'mode' });
   const role = useWatch({ control: form.control, name: 'role' });
 
-  const getUsersByRole = useQuery(trpc.usersPetugas.getUsersByRole.queryOptions({ role: role as 'KADER' | 'ORANGTUA' }));
+  const { data, refetch, isLoading } = useQuery(trpc.usersPetugas.getUsersByRole.queryOptions({ role: role as 'KADER' | 'ORANGTUA' }));
+  const getUsersByRole = data;
 
   const onSubmit = async (data: FormSchema) => {
     startTransition(async () => {
@@ -97,8 +98,10 @@ export const NotificationFormPetugas = () => {
           title: data.title,
           type: data.type,
         });
+        refetch();
       } else {
         await sendToAll.mutate({ body: data.body, role: data.role!, title: data.title, type: 'BROADCAST' });
+        refetch();
       }
     });
 
@@ -166,16 +169,16 @@ export const NotificationFormPetugas = () => {
                 <FormControl>
                   <Select onValueChange={(v) => field.onChange(v)} value={field.value ?? undefined} disabled={isPending}>
                     <SelectTrigger>
-                      <SelectValue placeholder={getUsersByRole.isLoading ? 'Memuat...' : 'Pilih user'} />
+                      <SelectValue placeholder={isLoading ? 'Memuat...' : 'Pilih user'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {getUsersByRole.data?.users?.length ? (
-                        getUsersByRole.data.users.map((u) => (
+                      {getUsersByRole?.users?.length ? (
+                        getUsersByRole.users.map((u) => (
                           <SelectItem key={u.id} value={u.id}>
                             {u.name} {u.email ? `• ${u.email}` : ''}
                           </SelectItem>
                         ))
-                      ) : getUsersByRole.isLoading ? (
+                      ) : isLoading ? (
                         <SelectItem value="loading">Memuat...</SelectItem>
                       ) : (
                         <SelectItem value="">Tidak ada user</SelectItem>
