@@ -6,7 +6,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DEFAULT_LIMIT } from '@/lib/utils';
@@ -16,8 +15,7 @@ import { format } from 'date-fns';
 import { EyeIcon, Filter, Search, X } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-// import { toast } from 'sonner';
-import { UserDetailModal } from '@/components/features/dashboard/sections/users/user-detail-modal';
+import { DetailBalitaModal } from './detail-balita-modal';
 
 function fmtDateShort(d?: string | Date | null) {
   if (!d) return '-';
@@ -111,7 +109,6 @@ const BalitaSectionSuspense = () => {
 
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [page, setPage] = useState(1);
-  const [role, setRole] = useState<string | undefined>(undefined);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -127,24 +124,22 @@ const BalitaSectionSuspense = () => {
   const allBalita = data.items || [];
   const pageCount = 1;
 
-  // const toggleSelectAll = () => {
-  //   const selectableUsers = allUsers.filter((user) => user.role !== 'PUSKESMAS');
-  //   if (selectedItems.length === selectableUsers.length) {
-  //     setSelectedItems([]);
-  //   } else {
-  //     setSelectedItems(allUsers.map((user) => user.id));
-  //   }
-  // };
+  const toggleSelectAll = () => {
+    const selectableUsers = allBalita.filter((balita) => balita.aktif === true);
+    if (selectedItems.length === selectableUsers.length) {
+      setSelectedItems([]);
+    } else {
+      setSelectedItems(allBalita.map((balita) => balita.id));
+    }
+  };
 
-  // const toggleSelectItem = (id: string) => {
-  //   const user = allUsers.find((user) => user.id === id);
-  //   if (user?.role === 'PUSKESMAS') return;
-  //   if (selectedItems.includes(id)) {
-  //     setSelectedItems(selectedItems.filter((itemId) => itemId !== id));
-  //   } else {
-  //     setSelectedItems([...selectedItems, id]);
-  //   }
-  // };
+  const toggleSelectItem = (id: string) => {
+    if (selectedItems.includes(id)) {
+      setSelectedItems(selectedItems.filter((itemId) => itemId !== id));
+    } else {
+      setSelectedItems([...selectedItems, id]);
+    }
+  };
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(search.trim()), 400);
@@ -153,7 +148,7 @@ const BalitaSectionSuspense = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [role, debouncedSearch]);
+  }, [debouncedSearch]);
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
@@ -219,7 +214,7 @@ const BalitaSectionSuspense = () => {
 
   return (
     <div className="flex flex-col gap-6 py-6">
-      <UserDetailModal id={selectedIdForUpdate} open={isDetailOpen} onOpenChange={setIsDetailOpen} />
+      <DetailBalitaModal id={selectedIdForUpdate} open={isDetailOpen} onOpenChange={setIsDetailOpen} />
 
       <div className="px-6">
         {/* Filters */}
@@ -259,13 +254,13 @@ const BalitaSectionSuspense = () => {
             <Table className="min-w-[1100px]">
               <TableHeader>
                 <TableRow className="bg-muted/40">
-                  <TableHead className="w-12 sticky left-0 bg-muted/40 z-10" />
-                  <TableHead className="min-w-[240px]">Identitas</TableHead>
-                  <TableHead className="min-w-[220px]">Kontak & KIA</TableHead>
+                  <TableHead className="w-12sticky left-0 bg-muted/40 backdrop-blur supports-backdrop-filter:bg-muted/60 z-10">
+                    <Checkbox checked={allBalita.length > 0 && selectedItems.length === allBalita.length} onCheckedChange={toggleSelectAll} aria-label="Select all items" />
+                  </TableHead>
+                  <TableHead className="min-w-60">Identitas Balita</TableHead>
+                  <TableHead className="min-w-[220px]">Orang Tua & Kontak</TableHead>
                   <TableHead className="min-w-[120px]">Status</TableHead>
-                  <TableHead className="min-w-[260px]">Alamat & Orang Tua</TableHead>
-                  <TableHead className="min-w-[160px]">Pengukuran Terakhir</TableHead>
-                  <TableHead className="min-w-[140px]">Dibuat</TableHead>
+                  <TableHead className="min-w-40">Pengukuran Terakhir</TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -283,20 +278,24 @@ const BalitaSectionSuspense = () => {
 
                     return (
                       <TableRow key={b.id}>
-                        <TableCell className="sticky left-0 bg-background z-10">{/* placeholder untuk checkbox / actions */}</TableCell>
+                        <TableCell className="sticky left-0 bg-background z-10">
+                          <Checkbox checked={selectedItems.includes(b.id)} onCheckedChange={() => toggleSelectItem(b.id)} aria-label={`Select ${b.nama}`} />
+                        </TableCell>
 
                         {/* Identitas */}
                         <TableCell>
-                          <div className="flex flex-col gap-1 max-w-[240px]">
+                          <div className="flex flex-col gap-1 max-w-60">
                             <div className="font-medium leading-tight truncate" title={b.nama ?? ''}>
-                              {b.nama ?? '-'}
+                              Nama : {b.nama ?? '-'}
                             </div>
                             <div className="text-xs text-muted-foreground truncate" title={b.jenisKelamin ?? ''}>
-                              {b.jenisKelamin ?? '-'}
+                              Kelamin: {b.jenisKelamin === 'L' ? 'Laki-Laki' : 'Perempuan'}
                             </div>
                             <div className="text-xs text-muted-foreground truncate" title={b.nikAnak ?? ''}>
                               NIK: {b.nikAnak ?? '-'}
                             </div>
+                            <div className="text-xs text-muted-foreground truncate">Lahir: {b.tanggalLahir ? fmtDateShort(b.tanggalLahir) : '-'}</div>
+
                             <div className="text-xs text-muted-foreground truncate" title={b.noKIA ?? ''}>
                               No KIA: {b.noKIA ?? '-'}
                             </div>
@@ -306,7 +305,6 @@ const BalitaSectionSuspense = () => {
                         {/* Kontak & KIA */}
                         <TableCell>
                           <div className="flex flex-col gap-1 max-w-[220px]">
-                            <div className="text-sm truncate">{b.tanggalLahir ? fmtDateShort(b.tanggalLahir) : '-'}</div>
                             <div className="text-xs text-muted-foreground truncate" title={orangTua?.phone ?? ''}>
                               Orang Tua: {orangTua?.name ?? '-'}
                             </div>
@@ -323,20 +321,10 @@ const BalitaSectionSuspense = () => {
                           </Badge>
                         </TableCell>
 
-                        {/* Alamat & RT/RW */}
-                        <TableCell>
-                          <div className="max-w-[260px] text-sm truncate" title={b.alamat ?? ''}>
-                            {b.alamat ?? '-'}
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Kel/Desa: {b.kelurahan ?? '-'} • Kec: {b.kecamatan ?? '-'}
-                          </div>
-                        </TableCell>
-
                         {/* Pengukuran Terakhir */}
                         <TableCell>
                           {pengukuran ? (
-                            <div className="flex flex-col gap-1 max-w-[160px]">
+                            <div className="flex flex-col gap-1 max-w-40">
                               <div className="text-sm truncate">
                                 {pengukuran.beratKg != null ? `${pengukuran.beratKg} kg` : '-'} / {pengukuran.tinggiCm != null ? `${pengukuran.tinggiCm} cm` : '-'}
                               </div>
@@ -378,33 +366,23 @@ const BalitaSectionSuspense = () => {
                             }}
                             disabled={selectedItems.length !== 1}
                           >
+                            <EyeIcon className="size-4" />
                             Detail
                           </Button>
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Pagination>
-                          <div className="flex items-center gap-2">
-                            <Button size="sm" variant="outline" onClick={() => handlePageChange(1)} disabled={page <= 1}>
-                              First
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => handlePageChange(Math.max(1, page - 1))} disabled={page <= 1}>
-                              Prev
-                            </Button>
-
-                            <div className="px-3 text-sm text-slate-700">
-                              Halaman {page} dari {pageCount}
-                            </div>
-
-                            <Button size="sm" variant="outline" onClick={() => handlePageChange(Math.min(pageCount, page + 1))} disabled={page >= pageCount}>
-                              Next
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={() => handlePageChange(pageCount)} disabled={page >= pageCount}>
-                              Last
-                            </Button>
-                          </div>
-                        </Pagination>
+                        <div className="flex items-center gap-2">
+                          <Pagination>
+                            <PaginationContent>
+                              <PaginationItem>
+                                <PaginationPrevious onClick={() => page > 1 && handlePageChange(page - 1)} className={page <= 1 ? 'pointer-events-none opacity-50' : ''} />
+                              </PaginationItem>
+                              <div className="flex items-center gap-1">{getPaginationItems()}</div>
+                              <PaginationItem>
+                                <PaginationNext onClick={() => page < pageCount && handlePageChange(page + 1)} className={page >= pageCount ? 'pointer-events-none opacity-50' : ''} />
+                              </PaginationItem>
+                            </PaginationContent>
+                          </Pagination>
+                        </div>
                       </div>
                     </div>
                   </TableCell>

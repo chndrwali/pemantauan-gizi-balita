@@ -1,4 +1,5 @@
 import { BalitaCreateModal } from './balita-create-modal';
+import { BalitaPengukuranModal } from './balita-pengukuran-modal';
 import { BalitaSection } from './balita-section';
 
 export const BalitaView = () => {
@@ -9,7 +10,10 @@ export const BalitaView = () => {
           <h1 className="text-2xl font-bold">Data Balita</h1>
           <p className="text-xs text-muted-foreground">Lihat data balita, tambah data balita, dan catat pengukuran z-score.</p>
         </div>
-        <BalitaCreateModal />
+        <div className="flex items-center gap-x-2">
+          <BalitaCreateModal />
+          <BalitaPengukuranModal />
+        </div>
       </div>
       <BalitaSection />
     </div>

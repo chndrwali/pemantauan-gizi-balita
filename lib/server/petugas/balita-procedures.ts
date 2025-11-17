@@ -7,6 +7,91 @@ import { Decimal } from '@prisma/client/runtime/library';
 import z from 'zod';
 
 export const balitaRouter = createTRPCRouter({
+  getById: baseProcedure.input(z.object({ id: z.string().uuid() })).query(async ({ input }) => {
+    const { id } = input;
+
+    const balita = await prisma.balita.findUnique({
+      where: { id },
+      select: {
+        aktif: true,
+        alamat: true,
+        anakKe: true,
+        bbLahirKg: true,
+        id: true,
+        jenisKelamin: true,
+        kecamatan: true,
+        kelurahan: true,
+        nama: true,
+        nikAnak: true,
+        noKIA: true,
+        tanggalLahir: true,
+        tbLahirCm: true,
+        pengukuran: {
+          take: 1,
+          orderBy: { tanggal: 'desc' },
+        },
+        orangTua: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!balita) return null;
+
+    // helper: safe convert Decimal -> number | undefined
+    const decimalToNumber = (d: Prisma.Decimal | null | undefined): number | undefined => {
+      if (d === null || d === undefined) return undefined;
+      // Prisma Decimal has toString() / toNumber(); using toString -> Number for safety
+      try {
+        const s = typeof d === 'object' && typeof d.toString === 'function' ? d.toString() : String(d);
+        const n = Number(s);
+        return Number.isFinite(n) ? n : undefined;
+      } catch {
+        return undefined;
+      }
+    };
+
+    const latest = balita.pengukuran && balita.pengukuran.length > 0 ? balita.pengukuran[0] : null;
+
+    const mapped = {
+      id: balita.id,
+      nama: balita.nama,
+      nikAnak: balita.nikAnak ?? null,
+      noKIA: balita.noKIA ?? null,
+      tanggalLahir: balita.tanggalLahir ? balita.tanggalLahir.toISOString() : null,
+      jenisKelamin: balita.jenisKelamin,
+      anakKe: balita.anakKe ?? null,
+      bbLahirKg: decimalToNumber(balita.bbLahirKg),
+      tbLahirCm: decimalToNumber(balita.tbLahirCm),
+      alamat: balita.alamat ?? null,
+      kelurahan: balita.kelurahan ?? null,
+      kecamatan: balita.kecamatan ?? null,
+      aktif: balita.aktif,
+      orangTua: balita.orangTua ?? null,
+      pengukuranTerbaru: latest
+        ? {
+            id: latest.id,
+            tanggal: latest.tanggal ? latest.tanggal.toISOString() : null,
+            beratKg: decimalToNumber(latest.beratKg),
+            tinggiCm: decimalToNumber(latest.tinggiCm),
+            lilaCm: decimalToNumber(latest.lilaCm),
+            lkCm: decimalToNumber(latest.lkCm),
+            zWFA: decimalToNumber(latest.zWFA),
+            zHFA: decimalToNumber(latest.zHFA),
+            zWFH: decimalToNumber(latest.zWFH),
+            statusBBU: latest.statusBBU ?? null,
+            statusTBU: latest.statusTBU ?? null,
+            statusBBTB: latest.statusBBTB ?? null,
+          }
+        : null,
+    };
+
+    return mapped;
+  }),
   createBalita: baseProcedure.input(createBalitaSchema).mutation(async ({ input }) => {
     const payload = {
       orangTuaId: input.orangTuaId,
@@ -162,8 +247,30 @@ export const balitaRouter = createTRPCRouter({
       prisma.balita.count({ where }),
     ]);
 
+    const mapped = items.map((b) => {
+      const latest = b.pengukuran && b.pengukuran.length > 0 ? b.pengukuran[0] : null;
+
+      return {
+        ...b,
+        bbLahirKg: b.bbLahirKg ? Number(b.bbLahirKg.toString()) : undefined,
+        tbLahirCm: b.tbLahirCm ? Number(b.tbLahirCm.toString()) : undefined,
+        tanggalLahir: b.tanggalLahir ? b.tanggalLahir.toISOString() : undefined,
+        pengukuran: latest
+          ? {
+              id: latest.id,
+              tanggal: latest.tanggal ? latest.tanggal.toISOString() : null,
+              beratKg: latest.beratKg ? Number(latest.beratKg.toString()) : undefined,
+              tinggiCm: latest.tinggiCm ? Number(latest.tinggiCm.toString()) : undefined,
+              statusBBTB: latest.statusBBTB,
+              statusBBU: latest.statusBBU,
+              statusTBU: latest.statusTBU,
+            }
+          : null,
+      };
+    });
+
     return {
-      items,
+      items: mapped,
       page,
       limit,
       total,
