@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutDashboardIcon, UserLockIcon } from 'lucide-react';
+import { BellIcon, LayoutDashboardIcon, UserLockIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from '@/components/ui/sidebar';
 import { DashboardSidebarFooter } from '@/components/features/dashboard/layout/dashboard-sidebar/dashboard-sidebar-footer';
@@ -36,6 +36,14 @@ export const PetugasSidebar = () => {
                 <Link href="/petugas/profile">
                   <UserLockIcon />
                   <span>Profile</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Notifikasi Saya" isActive={pathname === '/petugas/mynotification'}>
+                <Link href="/petugas/mynotification">
+                  <BellIcon />
+                  <span>Notifikasi Saya</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -71,10 +71,10 @@ export const createBalitaSchema = z.object({
 export const addTimbangSimpleSchema = z.object({
   balitaId: z.string().uuid(),
   tanggal: z.preprocess((v) => (typeof v === 'string' ? new Date(v) : v), z.date()),
-  beratKg: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional().nullable()),
-  tinggiCm: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional().nullable()),
-  lilaCm: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional().nullable()),
-  lkCm: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional().nullable()),
+  beratKg: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional()),
+  tinggiCm: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional()),
+  lilaCm: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional()),
+  lkCm: z.preprocess((v) => (v === null || v === undefined ? undefined : Number(v)), z.number().optional()),
 
   // optional reference for z-score calculation:
   // either provide lms.{wfa|hfa|wfh}.(L,M,S) OR meanSd.{wfa|hfa|wfh}.{mean,sd}
@@ -94,6 +94,6 @@ export const addTimbangSimpleSchema = z.object({
     .optional(),
 
   source: z.enum(['ORANGTUA', 'KADER', 'PETUGAS', 'PUSKESMAS']).optional().default('PUSKESMAS'),
-  pencatatId: z.string().uuid().optional().nullable(),
-  catatan: z.string().optional().nullable(),
+  pencatatId: z.string().uuid().optional(),
+  catatan: z.string().optional(),
 });

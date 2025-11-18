@@ -260,7 +260,7 @@ const BalitaSectionSuspense = () => {
                   <TableHead className="min-w-60">Identitas Balita</TableHead>
                   <TableHead className="min-w-[220px]">Orang Tua & Kontak</TableHead>
                   <TableHead className="min-w-[120px]">Status</TableHead>
-                  <TableHead className="min-w-40">Pengukuran Terakhir</TableHead>
+                  {/* <TableHead className="min-w-40">Pengukuran Terakhir</TableHead> */}
                 </TableRow>
               </TableHeader>
 
@@ -273,7 +273,7 @@ const BalitaSectionSuspense = () => {
                   </TableRow>
                 ) : (
                   allBalita.map((b) => {
-                    const pengukuran = Array.isArray(b.pengukuran) && b.pengukuran.length > 0 ? b.pengukuran[0] : undefined;
+                    // const pengukuran = Array.isArray(b.pengukuran) && b.pengukuran.length > 0 ? b.pengukuran[0] : undefined;
                     const orangTua = b.orangTua ?? undefined;
 
                     return (
@@ -322,7 +322,7 @@ const BalitaSectionSuspense = () => {
                         </TableCell>
 
                         {/* Pengukuran Terakhir */}
-                        <TableCell>
+                        {/* <TableCell>
                           {pengukuran ? (
                             <div className="flex flex-col gap-1 max-w-40">
                               <div className="text-sm truncate">
@@ -338,7 +338,7 @@ const BalitaSectionSuspense = () => {
                           ) : (
                             <div className="text-sm text-muted-foreground">Belum ada pengukuran</div>
                           )}
-                        </TableCell>
+                        </TableCell> */}
                       </TableRow>
                     );
                   })

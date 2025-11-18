@@ -19,6 +19,7 @@ import { useTRPC } from '@/trpc/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTransition } from 'react';
+import { NumberInput } from './add-pengukuran-form';
 
 type FormValues = z.infer<typeof createBalitaSchema>;
 const resolver = zodResolver(createBalitaSchema) as unknown as Resolver<FormValues>;
@@ -208,16 +209,7 @@ export const AddBalitaForm = () => {
                   <FormItem>
                     <FormLabel>Berat Lahir (kg)</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Contoh: 3.2"
-                        value={field.value ?? ''}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          field.onChange(v === '' ? undefined : parseFloat(v));
-                        }}
-                        disabled={isPending}
-                      />
+                      <NumberInput value={field.value} onChange={(v) => field.onChange(v)} placeholder="Contoh: 3.2" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

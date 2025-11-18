@@ -202,4 +202,22 @@ export const usersPetugasRouter = createTRPCRouter({
 
     return { items, page, limit, pageCount: Math.ceil(total / limit), total };
   }),
+  getNotificationByUserId: baseProcedure.input(z.object({ id: z.string().uuid().optional(), page: z.number().min(1).default(1), limit: z.number().min(1).max(100) })).query(async ({ input }) => {
+    const { id, limit, page } = input;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      prisma.notification.findMany({
+        where: { userId: id },
+        skip,
+        take: limit,
+        orderBy: [{ createdAt: 'desc' }],
+      }),
+      prisma.notification.count({
+        where: { userId: id },
+      }),
+    ]);
+
+    return { data, pageCount: Math.ceil(total / limit) };
+  }),
 });
