@@ -10,12 +10,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DEFAULT_LIMIT } from '@/lib/utils';
 import { useTRPC } from '@/trpc/client';
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { EyeIcon, Filter, Search, X } from 'lucide-react';
+import { EyeIcon, Filter, Search, Trash2Icon, X } from 'lucide-react';
 import { Suspense, useEffect, useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { DetailBalitaModal } from './detail-balita-modal';
+import { Spinner } from '@/components/ui/spinner';
+import { AlertBulkDelete } from '@/components/alert-bulk-delete';
+import { toast } from 'sonner';
+import { useCurrentUser } from '@/actions/auth-client';
 
 function fmtDateShort(d?: string | Date | null) {
   if (!d) return '-';
@@ -113,8 +117,11 @@ const BalitaSectionSuspense = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [selectedIdForUpdate, setSelectedIdForUpdate] = useState<string>('');
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const user = useCurrentUser();
+  const isAdmin = user?.role === 'PUSKESMAS';
 
-  const { data } = useSuspenseQuery(
+  const { data, refetch } = useSuspenseQuery(
     trpc.balita.getManyBalita.queryOptions({
       limit: DEFAULT_LIMIT,
       search: debouncedSearch || undefined,
@@ -153,6 +160,33 @@ const BalitaSectionSuspense = () => {
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
     setSelectedItems([]); // Clear selections when changing page
+  };
+
+  const bulkDelete = useMutation(
+    trpc.usersAdmin.bulkDelete.mutationOptions({
+      onSuccess: (data) => {
+        toast.success(`Berhasil hapus ${data.deletedCount} akun`);
+        setSelectedItems([]);
+        refetch();
+      },
+      onError: (error) => {
+        toast.error(`${error.message || 'Gagal hapus project'}`);
+      },
+    })
+  );
+
+  const handleDelete = () => {
+    if (selectedItems.length === 0) {
+      toast.error('Tidak ada item yang di pilih');
+      return;
+    }
+
+    setIsConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    bulkDelete.mutate({ ids: selectedItems });
+    setIsConfirmOpen(false);
   };
 
   // Generate pagination items
@@ -214,6 +248,8 @@ const BalitaSectionSuspense = () => {
 
   return (
     <div className="flex flex-col gap-6 py-6">
+      <AlertBulkDelete open={isConfirmOpen} onOpenChange={setIsConfirmOpen} selectedItems={selectedItems.length} confirmDelete={confirmDelete} />
+
       <DetailBalitaModal id={selectedIdForUpdate} open={isDetailOpen} onOpenChange={setIsDetailOpen} />
 
       <div className="px-6">
@@ -369,6 +405,21 @@ const BalitaSectionSuspense = () => {
                             <EyeIcon className="size-4" />
                             Detail
                           </Button>
+                          {isAdmin && (
+                            <Button variant="destructive" size="sm" onClick={handleDelete} disabled={selectedItems.length === 0 || bulkDelete.isPending}>
+                              {bulkDelete.isPending ? (
+                                <span className="flex items-center gap-2">
+                                  <Spinner />
+                                  Menghapus...
+                                </span>
+                              ) : (
+                                <span className="flex items-center gap-2">
+                                  <Trash2Icon className="h-4 w-4" />
+                                  Hapus yang Dipilih
+                                </span>
+                              )}
+                            </Button>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <Pagination>

@@ -46,7 +46,7 @@ export const notificationSchema = z.object({
 });
 
 export const sendToAllSchema = z.object({
-  role: z.enum(['KADER', 'ORANGTUA']),
+  role: z.enum(['KADER', 'ORANGTUA', 'PETUGAS']),
   title: z.string(),
   body: z.string(),
   type: z.string().default('BROADCAST'),

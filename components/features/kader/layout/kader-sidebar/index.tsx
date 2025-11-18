@@ -1,13 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { LayoutDashboardIcon, UserLockIcon } from 'lucide-react';
+import { BellIcon, LayoutDashboardIcon, UserLockIcon } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from '@/components/ui/sidebar';
 import { DashboardSidebarFooter } from '@/components/features/dashboard/layout/dashboard-sidebar/dashboard-sidebar-footer';
 import { KaderMain } from './kader-main';
 import { DashboardSidebarHeader } from '@/components/features/dashboard/layout/dashboard-sidebar/dashboard-sidebar-header';
 import { usePathname } from 'next/navigation';
+import { PetugasNotificationModal } from '@/components/features/petugas/sections/users/petugas-notification-modal';
 
 export const KaderSidebar = () => {
   const pathname = usePathname();
@@ -36,6 +37,17 @@ export const KaderSidebar = () => {
                   <span>Profile</span>
                 </Link>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Notifikasi Saya" isActive={pathname === '/kader/mynotification'}>
+                <Link href="/kader/mynotification">
+                  <BellIcon />
+                  <span>Notifikasi Saya</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <PetugasNotificationModal />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>

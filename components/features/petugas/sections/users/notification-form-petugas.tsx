@@ -14,11 +14,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { useTRPC } from '@/trpc/client';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { Resolver } from 'react-hook-form';
+import { useCurrentUser } from '@/actions/auth-client';
 
 const formSchema = z
   .object({
     mode: z.enum(['single', 'all']).default('single'),
-    role: z.enum(['KADER', 'ORANGTUA']).optional(),
+    role: z.enum(['KADER', 'ORANGTUA', 'PETUGAS']).optional(),
     userId: z.string().uuid().optional(),
     title: z.string().min(1, 'Judul wajib diisi'),
     body: z.string().min(1, 'Pesan wajib diisi'),
@@ -47,6 +48,8 @@ const resolver = zodResolver(formSchema) as unknown as Resolver<FormSchema, any>
 
 export const NotificationFormPetugas = () => {
   const trpc = useTRPC();
+  const user = useCurrentUser();
+  const isAdmin = user?.role === 'PUSKESMAS';
 
   const sendNotification = useMutation(
     trpc.usersPetugas.sendNotification.mutationOptions({
@@ -145,11 +148,12 @@ export const NotificationFormPetugas = () => {
               <FormControl>
                 <Select onValueChange={(v) => field.onChange(v)} value={field.value ?? undefined}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Pilih " />
+                    <SelectValue placeholder="Pilih" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="KADER">Kader</SelectItem>
                     <SelectItem value="ORANGTUA">Orang Tua</SelectItem>
+                    {isAdmin && <SelectItem value="PETUGAS">Petugas Kesehatan</SelectItem>}
                   </SelectContent>
                 </Select>
               </FormControl>

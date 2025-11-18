@@ -1,18 +1,18 @@
-import { BalitaView } from '@/components/features/petugas/sections/balita/balita-view';
+import { NotificationPetugasView } from '@/components/features/petugas/sections/notification/notification-view';
 import { DEFAULT_LIMIT } from '@/lib/utils';
 import { HydrateClient, prefetch, trpc } from '@/trpc/server';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Balita',
+  title: 'Notifikasi',
 };
 
 const Page = () => {
-  prefetch(trpc.balita.getManyBalita.queryOptions({ limit: DEFAULT_LIMIT }));
+  prefetch(trpc.usersPetugas.getNotificationMany.queryOptions({ limit: DEFAULT_LIMIT }));
 
   return (
     <HydrateClient>
-      <BalitaView />
+      <NotificationPetugasView />
     </HydrateClient>
   );
 };

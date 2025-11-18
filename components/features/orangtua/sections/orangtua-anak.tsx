@@ -1,224 +1,250 @@
 'use client';
 
-import React from 'react';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, Baby, Search, Filter, Edit, Trash2, Eye, Calendar } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { Role, User } from '@/lib/generated/prisma/client';
+import { useTRPC } from '@/trpc/client';
+import { useQuery } from '@tanstack/react-query';
 
-// Mock type — replace with real prisma types when wiring
-// type Child = {
-//   id: string;
-//   name: string;
-//   dob: string; // ISO
-//   gender?: 'L' | 'P';
-//   birthPlace?: string;
-//   weight?: number;
-//   height?: number;
-// };
+interface Props {
+  user: (User & { role: Role }) | null;
+}
 
-// interface Props {
-//   childrenList?: Child[];
-// }
+export const OrangTuaAnakSection = ({ user }: Props) => {
+  const trpc = useTRPC();
+  const { data: balita, isLoading } = useQuery(trpc.orangtua.getBalitaByOrangTuaId.queryOptions({ id: user?.id }));
 
-// { childrenList = [] }: Props
+  // Helper function untuk status gizi
+  const getNutritionStatus = (status: string | null | undefined) => {
+    switch (status) {
+      case 'GIZI_BURUK':
+        return { label: 'Gizi Buruk', color: 'bg-red-100 text-red-800 border-red-200' };
+      case 'GIZI_KURANG':
+        return { label: 'Gizi Kurang', color: 'bg-orange-100 text-orange-800 border-orange-200' };
+      case 'GIZI_BAIK':
+        return { label: 'Gizi Baik', color: 'bg-green-100 text-green-800 border-green-200' };
+      case 'GIZI_LEBIH':
+        return { label: 'Gizi Lebih', color: 'bg-yellow-100 text-yellow-800 border-yellow-200' };
+      case 'RISIKO_GEMUK':
+        return { label: 'Risiko Gemuk', color: 'bg-amber-100 text-amber-800 border-amber-200' };
+      case 'OBESE':
+      case 'OBESITAS':
+        return { label: 'Obesitas', color: 'bg-red-100 text-red-800 border-red-200' };
+      case 'NORMAL_TB_U':
+        return { label: 'Tinggi Normal', color: 'bg-green-100 text-green-800 border-green-200' };
+      case 'STUNTED':
+        return { label: 'Stunted', color: 'bg-orange-100 text-orange-800 border-orange-200' };
+      case 'SEVERELY_STUNTED':
+        return { label: 'Stunted Berat', color: 'bg-red-100 text-red-800 border-red-200' };
+      default:
+        return { label: 'Belum Diukur', color: 'bg-gray-100 text-gray-800 border-gray-200' };
+    }
+  };
 
-export const OrangTuaAnakSection = () => {
-  //   const [children, setChildren] = React.useState<Child[]>(childrenList);
-  //   const [editing, setEditing] = React.useState<Child | null>(null);
+  const calculateAge = (tanggalLahir: string) => {
+    const birthDate = new Date(tanggalLahir);
+    const today = new Date();
+    let months = (today.getFullYear() - birthDate.getFullYear()) * 12;
+    months -= birthDate.getMonth();
+    months += today.getMonth();
 
-  // form state for add/edit
-  const [form, setForm] = React.useState({ name: '', dob: '', gender: 'L', birthPlace: '', weight: '', height: '' });
+    if (months < 12) {
+      return `${months} bulan`;
+    } else {
+      const years = Math.floor(months / 12);
+      const remainingMonths = months % 12;
+      return `${years} tahun${remainingMonths > 0 ? ` ${remainingMonths} bulan` : ''}`;
+    }
+  };
 
-  //   const openAdd = () => {
-  //     setEditing(null);
-  //     setForm({ name: '', dob: '', gender: 'L', birthPlace: '', weight: '', height: '' });
-  //   };
-
-  //   const openEdit = (c: Child) => {
-  //     setEditing(c);
-  //     setForm({ name: c.name, dob: c.dob.slice(0, 10), gender: c.gender ?? 'L', birthPlace: c.birthPlace ?? '', weight: String(c.weight ?? ''), height: String(c.height ?? '') });
-  //   };
-
-  //   const handleSubmit = (e?: React.FormEvent) => {
-  //     e?.preventDefault();
-  //     if (!form.name || !form.dob) {
-  //       toast('Nama dan tanggal lahir wajib');
-  //       return;
-  //     }
-
-  //     if (editing) {
-  //       setChildren((prev) => prev.map((p) => (p.id === editing.id ? { ...p, ...editingFromForm(form) } : p)));
-  //       toast('Data anak diperbarui');
-  //     } else {
-  //       const id = String(Date.now());
-  //       setChildren((prev) => [...prev, { id, ...editingFromForm(form) }]);
-  //       toast('Anak berhasil ditambahkan');
-  //     }
-  //   };
-
-  //   const handleDelete = (id: string) => {
-  //     if (!confirm('Hapus data anak?')) return;
-  //     setChildren((prev) => prev.filter((c) => c.id !== id));
-  //     toast('Data anak dihapus');
-  //   };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const getLatestMeasurement = (pengukuran: any[]) => {
+    if (!pengukuran || pengukuran.length === 0) return null;
+    return pengukuran[pengukuran.length - 1];
+  };
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="w-full max-w-6xl mx-auto px-4 py-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Daftar Anak</h1>
-          <div className="text-sm text-slate-500">Kelola data balita keluarga Anda</div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
+            <Baby className="h-8 w-8 text-blue-600" />
+            Data Anak
+          </h1>
+          <p className="text-slate-600 mt-2">Kelola data dan pantau perkembangan anak Anda</p>
         </div>
 
-        <Sheet>
-          <SheetTrigger asChild>
-            <Button onClick={() => {}} className="inline-flex items-center gap-2">
-              <Plus className="h-4 w-4" /> Tambah Anak
-            </Button>
-          </SheetTrigger>
-
-          <SheetContent side="right" className="w-full max-w-md">
-            <SheetHeader>
-              <SheetTitle>
-                {/* {editing ? 'Edit Anak' : 'Tambah Anak'} */}
-                Tambah Anak
-              </SheetTitle>
-            </SheetHeader>
-
-            <form
-              onSubmit={() => {
-                // handleSubmit(e);
-              }}
-              className="mt-4 space-y-3"
-            >
-              <div>
-                <Label>Nama</Label>
-                <Input value={form.name} onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))} />
-              </div>
-
-              <div>
-                <Label>Tanggal Lahir</Label>
-                <Input type="date" value={form.dob} onChange={(e) => setForm((s) => ({ ...s, dob: e.target.value }))} />
-              </div>
-
-              <div>
-                <Label>Jenis Kelamin</Label>
-                <select value={form.gender} onChange={(e) => setForm((s) => ({ ...s, gender: e.target.value }))} className="w-full rounded-md border p-2">
-                  <option value="L">Laki-laki</option>
-                  <option value="P">Perempuan</option>
-                </select>
-              </div>
-
-              <div>
-                <Label>Tempat Lahir</Label>
-                <Input value={form.birthPlace} onChange={(e) => setForm((s) => ({ ...s, birthPlace: e.target.value }))} />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label>Berat (kg)</Label>
-                  <Input value={form.weight} onChange={(e) => setForm((s) => ({ ...s, weight: e.target.value }))} />
-                </div>
-                <div>
-                  <Label>Tinggi (cm)</Label>
-                  <Input value={form.height} onChange={(e) => setForm((s) => ({ ...s, height: e.target.value }))} />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 mt-2">
-                <Button type="submit" className="flex-1">
-                  {/* {editing ? 'Simpan' : 'Tambah'} */}
-                  Simpan
-                </Button>
-                <Button variant="outline" onClick={() => setForm({ name: '', dob: '', gender: 'L', birthPlace: '', weight: '', height: '' })}>
-                  Reset
-                </Button>
-              </div>
-            </form>
-          </SheetContent>
-        </Sheet>
+        <Link href="/orangtua/anak/tambah">
+          <Button className="bg-blue-600 hover:bg-blue-700 h-12 px-6 text-base">
+            <Plus className="h-5 w-5 mr-2" />
+            Tambah Anak
+          </Button>
+        </Link>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* {children.length === 0 ? (
-          <Card className="p-6 text-center">
-            <div className="text-sm text-slate-500">Belum ada anak terdaftar.</div>
-            <div className="mt-3">
-              <Button onClick={openAdd}>
-                <Plus className="h-4 w-4 mr-2" /> Tambah Anak
-              </Button>
-            </div>
-          </Card>
-        ) : (
-          children.map((c) => (
-            <Card key={c.id} className="p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarFallback>
-                    {c.name
-                      .split(' ')
-                      .map((s) => s[0])
-                      .slice(0, 2)
-                      .join('')}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <div className="text-sm font-medium">{c.name}</div>
-                  <div className="text-xs text-slate-500">
-                    {new Date(c.dob).toLocaleDateString('id-ID')} • {c.gender === 'L' ? 'Laki-laki' : 'Perempuan'}
+      {/* Search and Filter */}
+      <Card className="p-4 shadow-sm">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+            <Input placeholder="Cari nama anak..." className="pl-10 h-12 text-base" />
+          </div>
+          <Button variant="outline" className="h-12 px-4">
+            <Filter className="h-4 w-4 mr-2" />
+            Filter
+          </Button>
+        </div>
+      </Card>
+
+      {/* Stats Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="p-4 text-center bg-blue-50 border-blue-200">
+          <div className="text-2xl font-bold text-blue-900">{balita?.length || 0}</div>
+          <div className="text-sm text-blue-700">Total Anak</div>
+        </Card>
+        <Card className="p-4 text-center bg-green-50 border-green-200">
+          <div className="text-2xl font-bold text-green-900">{balita?.filter((a) => getLatestMeasurement(a.pengukuran)?.statusBBTB === 'GIZI_BAIK').length || 0}</div>
+          <div className="text-sm text-green-700">Gizi Baik</div>
+        </Card>
+        <Card className="p-4 text-center bg-orange-50 border-orange-200">
+          <div className="text-2xl font-bold text-orange-900">
+            {balita?.filter((a) => {
+              const status = getLatestMeasurement(a.pengukuran)?.statusBBTB;
+              return status === 'GIZI_KURANG' || status === 'STUNTED';
+            }).length || 0}
+          </div>
+          <div className="text-sm text-orange-700">Perlu Perhatian</div>
+        </Card>
+        <Card className="p-4 text-center bg-red-50 border-red-200">
+          <div className="text-2xl font-bold text-red-900">
+            {balita?.filter((a) => {
+              const status = getLatestMeasurement(a.pengukuran)?.statusBBTB;
+              return status === 'GIZI_BURUK' || status === 'SEVERELY_STUNTED';
+            }).length || 0}
+          </div>
+          <div className="text-sm text-red-700">Butuh Penanganan</div>
+        </Card>
+      </div>
+
+      {/* Anak List */}
+      <Card className="p-6 shadow-sm">
+        {isLoading ? (
+          <div className="text-center py-12">
+            <div className="animate-pulse text-lg">Memuat data anak...</div>
+          </div>
+        ) : balita && balita.length > 0 ? (
+          <div className="space-y-4">
+            {balita.map((anak) => {
+              const latestUkur = getLatestMeasurement(anak.pengukuran);
+              const status = getNutritionStatus(latestUkur?.statusBBTB);
+              const usia = calculateAge(anak.tanggalLahir);
+
+              return (
+                <div key={anak.id} className="border border-slate-200 rounded-lg p-4 hover:border-blue-300 transition-colors">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    {/* Info Anak */}
+                    <div className="flex-1">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
+                        <h3 className="text-xl font-semibold text-slate-900">{anak.nama}</h3>
+                        <Badge className={status.color}>{status.label}</Badge>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-slate-600">
+                        <div className="flex items-center gap-2">
+                          <Baby className="h-4 w-4 text-slate-400" />
+                          <span>{anak.jenisKelamin === 'L' ? 'Laki-laki' : 'Perempuan'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-slate-400" />
+                          <span>Usia: {usia}</span>
+                        </div>
+                        <div>Anak ke: {anak.anakKe || '-'}</div>
+                        <div>Lahir: {new Date(anak.tanggalLahir).toLocaleDateString('id-ID')}</div>
+                      </div>
+
+                      {/* Data Pengukuran Terbaru */}
+                      {latestUkur && (
+                        <div className="mt-4 p-3 bg-slate-50 rounded-lg">
+                          <div className="text-sm font-medium text-slate-700 mb-2">Pengukuran Terakhir:</div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                            <div>
+                              <span className="text-slate-600">Berat: </span>
+                              <strong>{latestUkur.beratKg} kg</strong>
+                            </div>
+                            <div>
+                              <span className="text-slate-600">Tinggi: </span>
+                              <strong>{latestUkur.tinggiCm} cm</strong>
+                            </div>
+                            <div>
+                              <span className="text-slate-600">Tanggal: </span>
+                              <strong>{new Date(latestUkur.tanggal).toLocaleDateString('id-ID')}</strong>
+                            </div>
+                            <div>
+                              <span className="text-slate-600">Catatan: </span>
+                              <span className={latestUkur.catatan ? 'text-slate-900' : 'text-slate-400'}>{latestUkur.catatan || 'Tidak ada'}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col sm:flex-row lg:flex-col gap-2">
+                      <Link href={`/orangtua/anak/${anak.id}`} className="flex-1">
+                        <Button variant="outline" className="w-full h-10">
+                          <Eye className="h-4 w-4 mr-2" />
+                          Detail
+                        </Button>
+                      </Link>
+                      <Link href={`/orangtua/anak/${anak.id}/edit`} className="flex-1">
+                        <Button variant="outline" className="w-full h-10">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Button>
+                      </Link>
+                      <Button variant="outline" className="w-full h-10 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Hapus
+                      </Button>
+                    </div>
                   </div>
-                  <div className="text-xs text-slate-500 mt-1">{c.weight ? `${c.weight} kg • ${c.height} cm` : 'Belum ada data berat/tinggi'}</div>
                 </div>
-              </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+            <Baby className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Belum ada data anak</h3>
+            <p className="text-slate-600 mb-6 max-w-md mx-auto">Tambahkan data anak Anda untuk mulai memantau perkembangan dan status gizi mereka.</p>
+            <Link href="/orangtua/anak/tambah">
+              <Button className="bg-blue-600 hover:bg-blue-700 h-12 px-8 text-base">
+                <Plus className="h-5 w-5 mr-2" />
+                Tambah Anak Pertama
+              </Button>
+            </Link>
+          </div>
+        )}
+      </Card>
 
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" onClick={() => openEdit(c)}>
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-                <Button variant="destructive" onClick={() => handleDelete(c.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </Card>
-          ))
-        )} */}
-      </div>
-
-      {/* optional: detailed view / growth chart placeholder for selected child */}
-      <Separator className="my-6" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-4 md:col-span-2">
-          <div className="text-sm font-medium mb-3">Pertumbuhan & Catatan</div>
-          <div className="text-xs text-slate-500">Pilih anak untuk lihat detail lengkap (placeholder)</div>
-          <div className="mt-4 text-sm text-slate-700">Grafik pertumbuhan akan muncul di sini.</div>
-        </Card>
-
-        <Card className="p-4">
-          <div className="text-sm font-medium mb-3">Tips Singkat</div>
-          <ul className="text-xs text-slate-600 list-disc pl-4">
-            <li>Pastikan imunisasi sesuai jadwal</li>
-            <li>Catat berat & tinggi setiap kunjungan</li>
-            <li>Hubungi petugas jika ada keluhan</li>
-          </ul>
-        </Card>
-      </div>
+      {/* Informasi Penting */}
+      <Card className="p-6 bg-blue-50 border-blue-200">
+        <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+          <Baby className="h-5 w-5" />
+          Informasi Penting
+        </h3>
+        <ul className="text-sm text-blue-800 space-y-2">
+          <li>• Pastikan data anak selalu diperbarui sesuai dengan kondisi terbaru</li>
+          <li>• Lakukan pengukuran berat dan tinggi badan secara berkala di posyandu</li>
+          <li>• Konsultasikan dengan tenaga kesehatan jika ada perubahan status gizi</li>
+          <li>• Catat perkembangan anak untuk memantau pertumbuhan yang optimal</li>
+        </ul>
+      </Card>
     </div>
   );
 };
-
-// function editingFromForm(form: any): Partial<Child> {
-//   return {
-//     name: form.name,
-//     dob: form.dob,
-//     gender: form.gender,
-//     birthPlace: form.birthPlace,
-//     weight: form.weight ? Number(form.weight) : undefined,
-//     height: form.height ? Number(form.height) : undefined,
-//   };
-// }

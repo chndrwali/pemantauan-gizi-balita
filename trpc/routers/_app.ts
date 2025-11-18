@@ -2,11 +2,13 @@ import { usersPetugasRouter } from '@/lib/server/petugas/user-procedures';
 import { createTRPCRouter } from '../init';
 import { usersAdminRouter } from '@/lib/server/puskesmas/users-procedures';
 import { balitaRouter } from '@/lib/server/petugas/balita-procedures';
+import { orangTuaRouter } from '@/lib/server/orangtua/orangtua-procedures';
 
 export const appRouter = createTRPCRouter({
   balita: balitaRouter,
   usersAdmin: usersAdminRouter,
   usersPetugas: usersPetugasRouter,
+  orangtua: orangTuaRouter,
 });
 // export type definition of API
 export type AppRouter = typeof appRouter;

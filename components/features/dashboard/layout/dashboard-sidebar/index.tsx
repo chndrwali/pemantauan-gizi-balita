@@ -8,6 +8,7 @@ import { DashboardSidebarFooter } from './dashboard-sidebar-footer';
 import { ProjectMain } from './dashboard-main';
 import { DashboardSidebarHeader } from './dashboard-sidebar-header';
 import { usePathname } from 'next/navigation';
+import { PetugasNotificationModal } from '@/components/features/petugas/sections/users/petugas-notification-modal';
 
 export const DashboardSidebar = () => {
   const pathname = usePathname();
@@ -36,6 +37,9 @@ export const DashboardSidebar = () => {
                   <span>Profile</span>
                 </Link>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <PetugasNotificationModal />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>

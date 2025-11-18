@@ -12,6 +12,11 @@ export const adminSideBarLink: NavItem[] = [
     url: '/dashboard/balita',
     icon: 'baby',
   },
+  {
+    title: 'Notifikasi Terkirim',
+    url: '/dashboard/notification',
+    icon: 'notification',
+  },
   // {
   //   title: 'Table',
   //   url: '#',

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, Home, Users, FileText, Calendar, MapPin, LogOut, User } from 'lucide-react';
+import { Menu, Home, Users, FileText, LogOut, User, BellIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,7 @@ const MENU = [
   { title: 'Beranda', href: '/orangtua', icon: Home },
   { title: 'Daftar Anak', href: '/orangtua/anak', icon: Users },
   { title: 'Catatan Balita', href: '/orangtua/catatan', icon: FileText },
-  { title: 'Jadwal Imunisasi', href: '/orangtua/jadwal', icon: Calendar },
-  { title: 'Posyandu / Janji', href: '/orangtua/janji', icon: MapPin },
+  { title: 'Notifikasi', href: '/orangtua/mynotification', icon: BellIcon },
 ];
 
 export const OrangTuaNavbar = () => {
@@ -25,7 +24,6 @@ export const OrangTuaNavbar = () => {
 
   const pathname = usePathname() ?? '/';
   const handleLogout = () => {
-    // sesuaikan dengan flow auth lo (next-auth / custom). For now navigate to /logout route
     logout();
     toast.success('Logout Berhasil');
   };

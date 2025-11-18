@@ -7,6 +7,40 @@ import { Decimal } from '@prisma/client/runtime/library';
 import z from 'zod';
 
 export const balitaRouter = createTRPCRouter({
+  balitaBulkDelete: baseProcedure
+    .input(
+      z.object({
+        ids: z.array(z.string().uuid()).min(1, 'Pilih minimal 1 data'),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { ids } = input;
+
+      const result = await prisma.$transaction(async (tx) => {
+        const existing = await tx.balita.findMany({
+          where: { id: { in: ids } },
+          select: { id: true },
+        });
+
+        const del = await tx.balita.deleteMany({
+          where: { id: { in: ids } },
+        });
+
+        return {
+          deletedCount: del.count,
+          deletedIds: existing.map((x) => x.id),
+        };
+      });
+
+      const notDeletedCount = ids.length - result.deletedCount;
+
+      return {
+        success: true,
+        deletedCount: result.deletedCount,
+        notDeletedCount,
+        deletedIds: result.deletedIds,
+      };
+    }),
   getById: baseProcedure.input(z.object({ id: z.string().uuid() })).query(async ({ input }) => {
     const { id } = input;
 

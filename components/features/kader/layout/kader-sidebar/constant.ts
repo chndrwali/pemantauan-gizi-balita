@@ -2,15 +2,14 @@ import { NavItem } from '@/components/features/dashboard/layout/dashboard-sideba
 
 export const kaderSideBarLink: NavItem[] = [
   {
-    title: 'Pengguna',
-    url: '/kader/users',
-    icon: 'userPen',
-    isActive: true,
-  },
-  {
     title: 'Balita',
     url: '/kader/balita',
     icon: 'baby',
+  },
+  {
+    title: 'Notifikasi Terkirim',
+    url: '/kader/notification',
+    icon: 'notification',
   },
   // {
   //   title: 'Table',

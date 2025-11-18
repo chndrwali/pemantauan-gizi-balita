@@ -75,8 +75,7 @@ export const PetugasDashboardStats = () => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-      <StatCard title="Posyandu" value={t.posyanduTotal ?? 0} icon={<Home />} />
-      <StatCard title="Balita (area)" value={t.balitaTotal ?? 0} icon={<MapPin />} />
+      <StatCard title="Balita" value={t.balitaTotal ?? 0} icon={<MapPin />} />
       <StatCard title="Penimbangan" value={t.timbangTotal ?? 0} icon={<Clipboard />} />
       <StatCard title="Event" value={t.eventTotal ?? 0} icon={<Bell />} />
       <StatCard title="Kunjungan" value={t.kunjunganTotal ?? 0} icon={<Activity />} />
@@ -102,7 +101,7 @@ export const KaderDashboardStats = () => {
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <StatCard title="Balita (area)" value={t.balitaTotal ?? 0} icon={<MapPin />} />
+      <StatCard title="Balita" value={t.balitaTotal ?? 0} icon={<MapPin />} />
       <StatCard title="Penimbangan" value={t.timbangTotal ?? 0} icon={<Clipboard />} />
       <StatCard title="Event / Posyandu" value={t.eventTotal ?? 0} icon={<Home />} />
       <StatCard title="Kunjungan" value={t.kunjunganTotal ?? 0} icon={<Activity />} />
