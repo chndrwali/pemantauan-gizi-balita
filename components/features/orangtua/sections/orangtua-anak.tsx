@@ -1,14 +1,14 @@
 'use client';
 
-import Link from 'next/link';
-import { Plus, Baby, Search, Filter, Edit, Trash2, Eye, Calendar } from 'lucide-react';
+import { Baby, Eye, Calendar } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Role, User } from '@/lib/generated/prisma/client';
 import { useTRPC } from '@/trpc/client';
 import { useQuery } from '@tanstack/react-query';
+import { DetailBalitaModal } from '../../petugas/sections/balita/detail-balita-modal';
+import { useState } from 'react';
 
 interface Props {
   user: (User & { role: Role }) | null;
@@ -16,6 +16,7 @@ interface Props {
 
 export const OrangTuaAnakSection = ({ user }: Props) => {
   const trpc = useTRPC();
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
   const { data: balita, isLoading } = useQuery(trpc.orangtua.getBalitaByOrangTuaId.queryOptions({ id: user?.id }));
 
   // Helper function untuk status gizi
@@ -32,7 +33,6 @@ export const OrangTuaAnakSection = ({ user }: Props) => {
       case 'RISIKO_GEMUK':
         return { label: 'Risiko Gemuk', color: 'bg-amber-100 text-amber-800 border-amber-200' };
       case 'OBESE':
-      case 'OBESITAS':
         return { label: 'Obesitas', color: 'bg-red-100 text-red-800 border-red-200' };
       case 'NORMAL_TB_U':
         return { label: 'Tinggi Normal', color: 'bg-green-100 text-green-800 border-green-200' };
@@ -78,17 +78,10 @@ export const OrangTuaAnakSection = ({ user }: Props) => {
           </h1>
           <p className="text-slate-600 mt-2">Kelola data dan pantau perkembangan anak Anda</p>
         </div>
-
-        <Link href="/orangtua/anak/tambah">
-          <Button className="bg-blue-600 hover:bg-blue-700 h-12 px-6 text-base">
-            <Plus className="h-5 w-5 mr-2" />
-            Tambah Anak
-          </Button>
-        </Link>
       </div>
 
       {/* Search and Filter */}
-      <Card className="p-4 shadow-sm">
+      {/* <Card className="p-4 shadow-sm">
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
@@ -99,7 +92,7 @@ export const OrangTuaAnakSection = ({ user }: Props) => {
             Filter
           </Button>
         </div>
-      </Card>
+      </Card> */}
 
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -124,7 +117,7 @@ export const OrangTuaAnakSection = ({ user }: Props) => {
           <div className="text-2xl font-bold text-red-900">
             {balita?.filter((a) => {
               const status = getLatestMeasurement(a.pengukuran)?.statusBBTB;
-              return status === 'GIZI_BURUK' || status === 'SEVERELY_STUNTED';
+              return status === 'GIZI_BURUK' || status === 'SEVERELY_STUNTED' || status === 'OBESE';
             }).length || 0}
           </div>
           <div className="text-sm text-red-700">Butuh Penanganan</div>
@@ -195,22 +188,11 @@ export const OrangTuaAnakSection = ({ user }: Props) => {
 
                     {/* Actions */}
                     <div className="flex flex-col sm:flex-row lg:flex-col gap-2">
-                      <Link href={`/orangtua/anak/${anak.id}`} className="flex-1">
-                        <Button variant="outline" className="w-full h-10">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Detail
-                        </Button>
-                      </Link>
-                      <Link href={`/orangtua/anak/${anak.id}/edit`} className="flex-1">
-                        <Button variant="outline" className="w-full h-10">
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </Button>
-                      </Link>
-                      <Button variant="outline" className="w-full h-10 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Hapus
+                      <Button variant="outline" className="w-full h-10" onClick={() => setIsDetailOpen(true)}>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Detail
                       </Button>
+                      <DetailBalitaModal id={anak.id} onOpenChange={setIsDetailOpen} open={isDetailOpen} />
                     </div>
                   </div>
                 </div>
@@ -221,13 +203,7 @@ export const OrangTuaAnakSection = ({ user }: Props) => {
           <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
             <Baby className="h-16 w-16 text-slate-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-slate-900 mb-2">Belum ada data anak</h3>
-            <p className="text-slate-600 mb-6 max-w-md mx-auto">Tambahkan data anak Anda untuk mulai memantau perkembangan dan status gizi mereka.</p>
-            <Link href="/orangtua/anak/tambah">
-              <Button className="bg-blue-600 hover:bg-blue-700 h-12 px-8 text-base">
-                <Plus className="h-5 w-5 mr-2" />
-                Tambah Anak Pertama
-              </Button>
-            </Link>
+            <p className="text-slate-600 mb-6 max-w-md mx-auto">Hubungi Petugas kesehatan atau kader untuk menambahkan data anak Anda untuk mulai memantau perkembangan dan status gizi mereka.</p>
           </div>
         )}
       </Card>

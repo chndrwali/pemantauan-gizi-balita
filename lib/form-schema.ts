@@ -97,3 +97,8 @@ export const addTimbangSimpleSchema = z.object({
   pencatatId: z.string().uuid().optional(),
   catatan: z.string().optional(),
 });
+
+export const addCatatanSchema = z.object({
+  title: z.string().min(1, 'Judul harud diisi'),
+  text: z.string().min(1, 'Pesan harus diisi'),
+});

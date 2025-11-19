@@ -1,224 +1,311 @@
 'use client';
 
-import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit2, Trash2, Plus, DownloadCloud } from 'lucide-react';
+import { Plus, Calendar, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTRPC } from '@/trpc/client';
+import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { DEFAULT_LIMIT } from '@/lib/utils';
+import z from 'zod';
+import { addCatatanSchema } from '@/lib/form-schema';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { useMemo } from 'react';
 
-// Mock types for child & records
-// type Child = {
-//   id: string;
-//   name: string;
-//   dob: string;
-// };
+type FormValues = z.infer<typeof addCatatanSchema>;
 
-// type RecordItem = {
-//   id: string;
-//   childId: string;
-//   date: string; // ISO
-//   weight?: number; // kg
-//   height?: number; // cm
-//   note?: string;
-// };
-
-// interface Props {
-//   childrenList?: Child[];
-//   recordsList?: RecordItem[];
-// }
-
-// { childrenList = [], recordsList = [] }: Props
+interface CatatanItem {
+  id: string;
+  title: string;
+  text: string;
+  createdAt: Date;
+}
 
 export const OrangTuaCatatanSection = () => {
-  //   const [children] = React.useState<Child[]>(childrenList.length ? childrenList : [{ id: 'c1', name: 'Ahmad', dob: '2022-01-12' }]);
-  //   const [records, setRecords] = React.useState<RecordItem[]>(
-  //     recordsList.length
-  //       ? recordsList
-  //       : [
-  //           { id: 'r1', childId: 'c1', date: '2025-10-01', weight: 8.2, height: 70, note: 'Sehat, aktif' },
-  //           { id: 'r2', childId: 'c1', date: '2025-08-01', weight: 7.9, height: 68, note: 'Naik 300g' },
-  //         ]
-  //   );
+  const trpc = useTRPC();
 
-  //   const [selectedChild, setSelectedChild] = React.useState<string>(children[0]?.id ?? '');
+  const { data, refetch, isLoading } = useSuspenseQuery(trpc.orangtua.getCatatan.queryOptions({ limit: DEFAULT_LIMIT }));
 
-  //   // sheet form state
-  //   const [editing, setEditing] = React.useState<RecordItem | null>(null);
-  //   const [form, setForm] = React.useState({ date: '', weight: '', height: '', note: '' });
+  const catatan: CatatanItem[] = data.items;
 
-  //   React.useEffect(() => {
-  //     if (!selectedChild && children.length) setSelectedChild(children[0].id);
-  //   }, [children, selectedChild]);
+  const stats = useMemo(() => {
+    const now = new Date();
+    const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-  //   const openAdd = () => {
-  //     setEditing(null);
-  //     setForm({ date: new Date().toISOString().slice(0, 10), weight: '', height: '', note: '' });
-  //   };
+    return {
+      catatanMingguIni: catatan.filter((c) => new Date(c.createdAt) > oneWeekAgo).length,
+    };
+  }, [catatan]);
 
-  //   const openEdit = (r: RecordItem) => {
-  //     setEditing(r);
-  //     setForm({ date: r.date.slice(0, 10), weight: r.weight ? String(r.weight) : '', height: r.height ? String(r.height) : '', note: r.note ?? '' });
-  //   };
+  const mutate = useMutation(
+    trpc.orangtua.addCatatan.mutationOptions({
+      onSuccess: () => {
+        toast.success('Catatan berhasil ditambahkan');
+        form.reset();
+        refetch();
+      },
+      onError: () => {
+        toast.error('Gagal menambah catatan');
+      },
+    })
+  );
 
-  //   const handleSubmit = (e?: React.FormEvent) => {
-  //     e?.preventDefault();
-  //     if (!form.date) {
-  //       toast('Tanggal wajib diisi');
-  //       return;
-  //     }
-  //     if (!selectedChild) {
-  //       toast('Pilih anak terlebih dahulu');
-  //       return;
-  //     }
+  const form = useForm<FormValues>({
+    resolver: zodResolver(addCatatanSchema),
+    defaultValues: {
+      text: '',
+      title: '',
+    },
+  });
 
-  //     if (editing) {
-  //       setRecords((prev) => prev.map((p) => (p.id === editing.id ? { ...p, date: form.date, weight: form.weight ? Number(form.weight) : undefined, height: form.height ? Number(form.height) : undefined, note: form.note } : p)));
-  //       toast('Catatan diperbarui');
-  //     } else {
-  //       const id = String(Date.now());
-  //       const newRec: RecordItem = { id, childId: selectedChild, date: form.date, weight: form.weight ? Number(form.weight) : undefined, height: form.height ? Number(form.height) : undefined, note: form.note };
-  //       setRecords((prev) => [newRec, ...prev]);
-  //       toast('Catatan ditambahkan');
-  //     }
-  //   };
+  const onSubmit = (values: FormValues) => {
+    mutate.mutate(values);
+  };
 
-  //   const handleDelete = (id: string) => {
-  //     if (!confirm('Hapus catatan?')) return;
-  //     setRecords((prev) => prev.filter((r) => r.id !== id));
-  //     toast('Catatan dihapus');
-  //   };
+  const formatDate = (date: Date) => {
+    return new Date(date).toLocaleDateString('id-ID', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
-  //   const selectedRecords = records.filter((r) => r.childId === selectedChild).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const getRelativeTime = (date: Date) => {
+    const now = new Date();
+    const diffInMs = now.getTime() - new Date(date).getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInHours < 1) {
+      return 'Baru saja';
+    } else if (diffInHours < 24) {
+      return `${diffInHours} jam yang lalu`;
+    } else if (diffInDays === 1) {
+      return 'Kemarin';
+    } else if (diffInDays < 7) {
+      return `${diffInDays} hari yang lalu`;
+    } else {
+      return formatDate(date);
+    }
+  };
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="w-full max-w-6xl mx-auto px-4 py-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">Catatan Balita</h1>
-          <div className="text-sm text-slate-500">Lihat & catat pertumbuhan anak Anda</div>
+          <h1 className="text-2xl md:text-3xl font-bold text-slate-900 flex items-center gap-3">
+            <FileText className="h-8 w-8 text-blue-600" />
+            Catatan
+          </h1>
+          <p className="text-slate-600 mt-2">Buat catatan agar anda tidak mudah lupa</p>
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="hidden sm:block">
-            <Label>Filter Anak</Label>
-            {/* <select value={selectedChild} onChange={(e) => setSelectedChild(e.target.value)} className="rounded-md border p-2">
-              {children.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select> */}
-          </div>
-
           <Sheet>
             <SheetTrigger asChild>
-              <Button onClick={() => {}} className="inline-flex items-center gap-2">
-                <Plus className="h-4 w-4" /> Tambah Catatan
+              <Button className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700">
+                <Plus className="h-4 w-4" />
+                Tambah Catatan
               </Button>
             </SheetTrigger>
 
-            <SheetContent side="right" className="w-full max-w-md">
+            <SheetContent side="right" className="w-full sm:max-w-md">
               <SheetHeader>
-                <SheetTitle>
-                  {/* {editing ? 'Edit Catatan' : 'Tambah Catatan'} */}
-                  Tambah Catatan
-                </SheetTitle>
+                <SheetTitle className="text-xl font-semibold">Tambah Catatan Baru</SheetTitle>
               </SheetHeader>
 
-              <form className="mt-4 space-y-3" onSubmit={() => {}}>
-                <div>
-                  <Label>Tanggal</Label>
-                  {/* <Input type="date" value={form.date} onChange={(e) => setForm((s) => ({ ...s, date: e.target.value }))} /> */}
-                </div>
+              <Form {...form}>
+                <form className="mt-6 space-y-4 px-4" onSubmit={form.handleSubmit(onSubmit)}>
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label htmlFor="title">Judul Catatan</Label>
+                        <FormControl>
+                          <Input {...field} placeholder="Contoh: Perkembangan bulan ke-6" className="w-full" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <Label>Berat (kg)</Label>
-                    {/* <Input value={form.weight} onChange={(e) => setForm((s) => ({ ...s, weight: e.target.value }))} /> */}
+                  <FormField
+                    control={form.control}
+                    name="text"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label htmlFor="text">Isi Catatan</Label>
+                        <FormControl>
+                          <Textarea {...field} placeholder="Tuliskan catatan perkembangan, keluhan, atau hal penting lainnya..." className="w-full min-h-[120px] resize-vertical" rows={5} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex items-center gap-2 pt-4">
+                    <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={mutate.isPending}>
+                      {mutate.isPending ? 'Menyimpan...' : 'Simpan Catatan'}
+                    </Button>
                   </div>
-                  <div>
-                    <Label>Tinggi (cm)</Label>
-                    {/* <Input value={form.height} onChange={(e) => setForm((s) => ({ ...s, height: e.target.value }))} /> */}
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Catatan</Label>
-                  {/* <Textarea value={form.note} onChange={(e) => setForm((s) => ({ ...s, note: e.target.value }))} /> */}
-                </div>
-
-                <div className="flex items-center gap-2 mt-2">
-                  <Button type="submit" className="flex-1">
-                    {/* {editing ? 'Simpan' : 'Tambah'} */} Simpan
-                  </Button>
-                  {/* <Button variant="outline" onClick={() => setForm({ date: '', weight: '', height: '', note: '' })}> */}
-                  <Button>Reset</Button>
-                </div>
-              </form>
+                </form>
+              </Form>
             </SheetContent>
           </Sheet>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2">
-          <Card className="p-4 mb-4">
-            <div className="flex items-center justify-between">
-              {/* <div className="text-sm font-medium">Catatan untuk: <span className="font-semibold">{children.find((c) => c.id === selectedChild)?.name ?? '-'}</span></div> */}
-              {/* <div className="text-xs text-slate-500">Total: {selectedRecords.length}</div> */}
-            </div>
+      {/* Stats Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="p-4 text-center bg-blue-50 border-blue-200">
+          <div className="text-2xl font-bold text-blue-900">{catatan.length}</div>
+          <div className="text-sm text-blue-700">Total Catatan</div>
+        </Card>
+        <Card className="p-4 text-center bg-green-50 border-green-200">
+          <div className="text-2xl font-bold text-green-900">{stats.catatanMingguIni}</div>
+          <div className="text-sm text-green-700">Minggu Ini</div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Content */}
+        <div className="lg:col-span-3">
+          <Card className="p-6 shadow-sm">
+            {isLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-pulse text-lg">Memuat catatan...</div>
+              </div>
+            ) : catatan.length > 0 ? (
+              <div className="space-y-4">
+                {catatan.map((item) => (
+                  <Card key={item.id} className="p-4 border border-slate-200 hover:border-blue-300 transition-colors">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">{item.title}</h3>
+                      </div>
+                    </div>
+
+                    <p className="text-slate-700 mb-4 leading-relaxed whitespace-pre-wrap">{item.text}</p>
+
+                    <div className="flex items-center justify-between text-sm text-slate-500">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          <span>{formatDate(item.createdAt)}</span>
+                        </div>
+                        <span>•</span>
+                        <span>{getRelativeTime(item.createdAt)}</span>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 border-2 border-dashed border-slate-200 rounded-lg">
+                <FileText className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">Belum ada catatan</h3>
+                <p className="text-slate-600 mb-6 max-w-md mx-auto">Mulai dengan menambahkan catatan pertama Anda untuk mencatat perkembangan anak.</p>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Tambah Catatan Pertama
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-full sm:max-w-md">
+                    <SheetHeader>
+                      <SheetTitle className="text-xl font-semibold">Tambah Catatan Baru</SheetTitle>
+                    </SheetHeader>
+
+                    <Form {...form}>
+                      <form className="mt-6 space-y-4 px-4" onSubmit={form.handleSubmit(onSubmit)}>
+                        <FormField
+                          control={form.control}
+                          name="title"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Label htmlFor="title">Judul Catatan</Label>
+                              <FormControl>
+                                <Input {...field} placeholder="Contoh: Perkembangan bulan ke-6" className="w-full" />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name="text"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Label htmlFor="text">Isi Catatan</Label>
+                              <FormControl>
+                                <Textarea {...field} placeholder="Tuliskan catatan perkembangan, keluhan, atau hal penting lainnya..." className="w-full min-h-[120px] resize-vertical" rows={5} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <div className="flex items-center gap-2 pt-4">
+                          <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={mutate.isPending}>
+                            {mutate.isPending ? 'Menyimpan...' : 'Simpan Catatan'}
+                          </Button>
+                        </div>
+                      </form>
+                    </Form>
+                  </SheetContent>
+                </Sheet>
+              </div>
+            )}
           </Card>
-
-          {/* {selectedRecords.length === 0 ? (
-            <Card className="p-6 text-center">
-              <div className="text-sm text-slate-500">Belum ada catatan untuk anak ini.</div>
-            </Card>
-          ) : (
-            selectedRecords.map((r) => (
-              <Card key={r.id} className="p-4 mb-3 flex items-start justify-between">
-                <div>
-                  <div className="text-sm font-medium">{new Date(r.date).toLocaleDateString('id-ID')}</div>
-                  <div className="text-xs text-slate-500 mt-1">{r.weight ? `${r.weight} kg` : '-'} • {r.height ? `${r.height} cm` : '-'}</div>
-                  {r.note && <div className="mt-2 text-sm text-slate-700">{r.note}</div>}
-                </div>
-
-                <div className="flex flex-col items-end gap-2">
-                  <div className="flex gap-2">
-                    <Button variant="ghost" onClick={() => openEdit(r)}>
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button variant="destructive" onClick={() => handleDelete(r.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))
-          )} */}
         </div>
 
-        <aside>
-          <Card className="p-3 mb-4">
-            <div className="text-sm font-medium">Ringkasan Terbaru</div>
-            {/* <div className="mt-3 text-sm text-slate-700">Berat terakhir: {selectedRecords[0]?.weight ?? '-'} kg</div> */}
-            {/* <div className="text-xs text-slate-500 mt-1">Tinggi terakhir: {selectedRecords[0]?.height ?? '-'} cm</div> */}
-            <div className="mt-3">
-              <Button variant="outline" className="flex items-center gap-2">
-                <DownloadCloud className="h-4 w-4" /> Export CSV
-              </Button>
-            </div>
+        {/* Sidebar */}
+        <aside className="space-y-6">
+          <Card className="p-5 bg-blue-50 border-blue-200">
+            <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Tips Membuat Catatan
+            </h3>
+            <ul className="text-sm text-blue-800 space-y-2">
+              <li>• Catat perkembangan fisik (berat, tinggi, gigi)</li>
+              <li>• Tulis pencapaian motorik (merangkak, berjalan)</li>
+              <li>• Catat pola makan dan kesulitan yang dialami</li>
+              <li>• Tuliskan keluhan kesehatan atau alergi</li>
+              <li>• Dokumentasi moment spesial pertama kali</li>
+            </ul>
           </Card>
 
-          <Card className="p-3">
-            <div className="text-sm font-medium">Tips Kesehatan</div>
-            <ul className="text-xs text-slate-600 list-disc pl-4 mt-2">
-              <li>Catat berat & tinggi setiap kunjungan</li>
-              <li>Berikan ASI eksklusif sampai 6 bulan (jika memungkinkan)</li>
-              <li>Konsultasi ke petugas jika kenaikan berat tidak sesuai</li>
+          <Card className="p-5 bg-green-50 border-green-200">
+            <h3 className="font-semibold text-green-900 mb-3">Manfaat Mencatat</h3>
+            <ul className="text-sm text-green-800 space-y-2">
+              <li>• Memantau perkembangan secara teratur</li>
+              <li>• Bahan konsultasi dengan dokter</li>
+              <li>• Mengenali pola pertumbuhan anak</li>
+              <li>• Dokumentasi kenangan berharga</li>
+              <li>• Deteksi dini masalah kesehatan</li>
+            </ul>
+          </Card>
+
+          <Card className="p-5 bg-amber-50 border-amber-200">
+            <h3 className="font-semibold text-amber-900 mb-3">Pengingat</h3>
+            <ul className="text-sm text-amber-800 space-y-2">
+              <li>• Update catatan setiap bulan</li>
+              <li>• Catat sebelum kunjungan posyandu</li>
+              <li>• Simpan foto perkembangan</li>
+              <li>• Bagikan dengan pasangan</li>
+              <li>• Backup data secara berkala</li>
             </ul>
           </Card>
         </aside>

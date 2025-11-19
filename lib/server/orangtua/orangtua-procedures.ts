@@ -1,4 +1,5 @@
 import prisma from '@/lib/db';
+import { addCatatanSchema } from '@/lib/form-schema';
 import { baseProcedure, createTRPCRouter } from '@/trpc/init';
 import z from 'zod';
 
@@ -18,6 +19,8 @@ export const orangTuaRouter = createTRPCRouter({
         tanggalLahir: true,
         tbLahirCm: true,
         pengukuran: {
+          orderBy: { tanggal: 'desc' },
+          take: 1,
           select: {
             beratKg: true,
             catatan: true,
@@ -55,5 +58,32 @@ export const orangTuaRouter = createTRPCRouter({
     }));
 
     return mapped;
+  }),
+  addCatatan: baseProcedure.input(addCatatanSchema).mutation(async ({ input }) => {
+    const { text, title } = input;
+
+    const data = await prisma.diary.create({
+      data: { text, title, createdAt: new Date() },
+    });
+
+    return data;
+  }),
+  getCatatan: baseProcedure.input(z.object({ page: z.number().min(1).default(1), limit: z.number().min(1).max(100) })).query(async ({ input }) => {
+    const { page, limit } = input;
+    const skip = (page - 1) * limit;
+
+    const [items, total] = await Promise.all([
+      prisma.diary.findMany({
+        skip,
+        take: limit,
+      }),
+      prisma.diary.count(),
+    ]);
+
+    return {
+      items,
+      total,
+      pageCount: Math.ceil(total / limit),
+    };
   }),
 });

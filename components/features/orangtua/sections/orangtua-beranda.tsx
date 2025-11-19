@@ -88,9 +88,11 @@ export const OrangTuaSections = ({ user }: Props) => {
   // Helper functions untuk data yang sering digunakan
   const getLatestMeasurement = (balitaData: typeof balita) => {
     if (!balitaData || balitaData.length === 0) return null;
-    const latestBalita = balitaData[0];
-    if (!latestBalita.pengukuran || latestBalita.pengukuran.length === 0) return null;
-    return latestBalita.pengukuran[latestBalita.pengukuran.length - 1];
+    // ambil pengukuran terbaru dari semua anak (jika mau single latest across children)
+    // atau untuk single anak: gunakan anak.pengukuran[0]
+    const firstChild = balitaData[0];
+    if (!firstChild?.pengukuran || firstChild.pengukuran.length === 0) return null;
+    return firstChild.pengukuran[0];
   };
 
   const getOverallStatus = (balitaData: typeof balita): StatusInfo => {
@@ -101,7 +103,7 @@ export const OrangTuaSections = ({ user }: Props) => {
     // Ambil status dari semua anak, prioritaskan yang paling membutuhkan perhatian
     const allStatuses: MeasurementStatus[] = balitaData
       .map((anak) => {
-        const latestUkur = anak.pengukuran && anak.pengukuran.length > 0 ? anak.pengukuran[anak.pengukuran.length - 1] : null;
+        const latestUkur = anak.pengukuran && anak.pengukuran.length > 0 ? anak.pengukuran[0] : null;
 
         if (!latestUkur) return null;
 

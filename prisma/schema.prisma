@@ -355,3 +355,10 @@ model MonthlyStats {
   @@index([bulan])
   @@map("monthly_stats")
 }
+
+model Diary {
+  id String  @id @default(uuid())
+  title String
+  text  String
+  createdAt DateTime @default(now())
+}
