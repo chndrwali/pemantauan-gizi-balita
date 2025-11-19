@@ -7,8 +7,8 @@
 generator client {
   provider = "prisma-client"
   output   = "../lib/generated/prisma"
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
   // runtime = "vercel-edge"
+  binaryTargets = ["native", "linux-musl", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
